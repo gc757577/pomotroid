@@ -12,6 +12,7 @@
   "repository": "github:splode/pomotroid",
   "type": "module",
   "scripts": {
+    "desktop:dev": "tauri dev --config src-tauri/tauri.dev.conf.json",
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",

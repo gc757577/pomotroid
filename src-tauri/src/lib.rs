@@ -35,6 +35,15 @@ use commands::{
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let context = tauri::generate_context!();
+    // Refuse unsafe debug launches before plugins can create logs or open data.
+    #[cfg(debug_assertions)]
+    assert_eq!(
+        context.config().identifier,
+        "io.github.gc75.pomotroidfork.dev",
+        "Use `npm run desktop:dev` to keep development data separate from Pomotroid"
+    );
+
     tauri::Builder::default()
         .plugin(
             LogBuilder::new()
@@ -87,6 +96,9 @@ pub fn run() {
             {
                 let conn = db.lock().unwrap();
                 settings::seed_defaults(&conn).expect("failed to seed default settings");
+                #[cfg(debug_assertions)]
+                settings::save_setting(&conn, "check_for_updates", "false")
+                    .expect("failed to disable development updates");
             }
             app.manage(db.clone());
 
@@ -188,6 +200,9 @@ pub fn run() {
             let main_window = app
                 .get_webview_window("main")
                 .expect("main window not found");
+
+            #[cfg(debug_assertions)]
+            main_window.set_title("Pomotroid Fork Dev")?;
 
             // The config sets decorations:true so macOS renders the window correctly
             // (decorations:false prevents event processing on macOS). On every other
@@ -404,6 +419,6 @@ pub fn run() {
             check_update,
             install_update,
         ])
-        .run(tauri::generate_context!())
+        .run(context)
         .expect("error while running tauri application");
 }

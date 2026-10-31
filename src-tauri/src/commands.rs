@@ -649,6 +649,7 @@ pub struct UpdateInfo {
 /// can display a non-blocking message.
 #[tauri::command]
 pub async fn check_update(app: AppHandle) -> Result<Option<UpdateInfo>, String> {
+    ensure_updates_allowed(&app)?;
     use tauri_plugin_updater::UpdaterExt;
     log::info!("[updater] checking for updates");
     let updater = app.updater().map_err(|e| {
@@ -679,6 +680,7 @@ pub async fn check_update(app: AppHandle) -> Result<Option<UpdateInfo>, String> 
 /// Should only be called after `check_update` has returned `Some(UpdateInfo)`.
 #[tauri::command]
 pub async fn install_update(app: AppHandle) -> Result<(), String> {
+    ensure_updates_allowed(&app)?;
     use tauri_plugin_updater::UpdaterExt;
     log::info!("[updater] install requested — checking for update");
     let updater = app.updater().map_err(|e| {
@@ -706,6 +708,13 @@ pub async fn install_update(app: AppHandle) -> Result<(), String> {
         })?;
     log::info!("[updater] install complete — relaunching");
     app.restart();
+}
+
+fn ensure_updates_allowed(app: &AppHandle) -> Result<(), String> {
+    if cfg!(debug_assertions) || app.config().identifier == "io.github.gc75.pomotroidfork.dev" {
+        return Err("개발용 앱에서는 업데이트 확인과 설치가 비활성화되어 있습니다.".into());
+    }
+    Ok(())
 }
 
 fn cue_to_stem(cue: &str) -> Result<&'static str, String> {
