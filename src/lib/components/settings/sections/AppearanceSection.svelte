@@ -6,6 +6,7 @@
   import { applyTheme } from '$lib/stores/theme';
   import { getThemes, setSetting, onThemesChanged, previewTimerOpacity } from '$lib/ipc';
   import { isWindows } from '$lib/utils/platform';
+  import SettingsToggle from '$lib/components/settings/SettingsToggle.svelte';
   import { resolveThemeName } from '$lib/utils/theme';
   import type { UnlistenFn } from '@tauri-apps/api/event';
   import * as m from '$paraglide/messages.js';
@@ -16,6 +17,30 @@
   let opacityError = $state('');
   let opacityQueue = Promise.resolve();
   let opacityRevision = 0;
+  let hoverOpacity = $state($settings.hover_opacity_percent);
+  let adjustingHover = $state(false);
+  let hoverRevision = 0;
+
+  $effect(() => {
+    const saved = $settings.hover_opacity_percent;
+    if (!adjustingHover) hoverOpacity = saved;
+  });
+
+  function commitHoverOpacity() {
+    const value = hoverOpacity;
+    const revision = hoverRevision;
+    queueOpacity(async () => {
+      settings.set(await setSetting('hover_opacity_percent', String(value)));
+      if (revision === hoverRevision) adjustingHover = false;
+    });
+  }
+
+  function toggleHoverOpacity() {
+    queueOpacity(async () => {
+      const enabled = get(settings).hover_opacity_enabled;
+      settings.set(await setSetting('hover_opacity_enabled', String(!enabled)));
+    });
+  }
 
   $effect(() => {
     const saved = $settings.timer_opacity_percent;
@@ -26,6 +51,7 @@
     opacityQueue = opacityQueue.then(action).catch((error) => {
       opacityError = String(error);
       adjustingOpacity = false;
+      adjustingHover = false;
       opacity = get(settings).timer_opacity_percent;
     });
   }
@@ -163,6 +189,41 @@
       />
       <p id="timer-opacity-description">{m.appearance_timer_opacity_desc()}</p>
       {#if opacityError}<p class="opacity-error" role="alert">{opacityError}</p>{/if}
+    </div>
+    <SettingsToggle
+      label={m.appearance_hover_opacity_enabled()}
+      description={m.appearance_hover_opacity_enabled_desc()}
+      checked={$settings.hover_opacity_enabled}
+      onclick={toggleHoverOpacity}
+    />
+    <div class="opacity-control">
+      <div class="opacity-heading">
+        <label for="hover-opacity">{m.appearance_hover_opacity()}</label>
+        <output for="hover-opacity">{hoverOpacity}%</output>
+      </div>
+      <input
+        id="hover-opacity"
+        type="range"
+        min="20"
+        max="100"
+        step="1"
+        value={hoverOpacity}
+        aria-describedby="hover-opacity-description"
+        aria-valuetext={`${hoverOpacity}%`}
+        oninput={(event) => {
+          hoverOpacity = event.currentTarget.valueAsNumber;
+          adjustingHover = true;
+          hoverRevision += 1;
+          opacityError = '';
+        }}
+        onchange={commitHoverOpacity}
+        onpointercancel={() => {
+          hoverRevision += 1;
+          hoverOpacity = get(settings).hover_opacity_percent;
+          adjustingHover = false;
+        }}
+      />
+      <p id="hover-opacity-description">{m.appearance_hover_opacity_desc()}</p>
     </div>
   {/if}
   <!-- Mode selector -->

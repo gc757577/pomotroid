@@ -68,11 +68,10 @@ pub fn run() {
                     app.try_state::<db::DbState>(),
                     app.get_webview_window("main"),
                 ) {
-                    let percent = db.lock().ok()
-                        .and_then(|conn| settings::load(&conn).ok())
-                        .map(|saved| saved.timer_opacity_percent);
-                    if let Some(percent) = percent {
-                        if let Err(error) = window_opacity::apply(&main, percent) {
+                    let saved = db.lock().ok()
+                        .and_then(|conn| settings::load(&conn).ok());
+                    if let Some(saved) = saved {
+                        if let Err(error) = window_opacity::configure(&main, &saved) {
                             log::error!("[window-opacity] restore after settings close failed: {error}");
                         }
                     }
@@ -234,7 +233,7 @@ pub fn run() {
 
             // Apply before the frontend shows the timer to avoid an opaque flash.
             window_opacity::install(&main_window)?;
-            if let Err(error) = window_opacity::apply(&main_window, initial_settings.timer_opacity_percent) {
+            if let Err(error) = window_opacity::configure(&main_window, &initial_settings) {
                 log::error!("[window-opacity] startup apply failed: {error}");
                 let _ = window_opacity::apply(&main_window, 100);
             }

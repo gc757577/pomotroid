@@ -6,6 +6,8 @@ import type { Settings } from '$lib/types';
 
 const defaults: Settings = {
   timer_opacity_percent: 100,
+  hover_opacity_enabled: false,
+  hover_opacity_percent: 100,
   time_work_secs: 1500,
   time_short_break_secs: 300,
   time_long_break_secs: 900,

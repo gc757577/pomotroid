@@ -13,6 +13,8 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Settings {
     pub timer_opacity_percent: u32,
+    pub hover_opacity_enabled: bool,
+    pub hover_opacity_percent: u32,
     pub always_on_top: bool,
     pub break_always_on_top: bool,
     pub auto_start_work: bool,
@@ -72,6 +74,8 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             timer_opacity_percent: 100,
+            hover_opacity_enabled: false,
+            hover_opacity_percent: 100,
             always_on_top: false,
             break_always_on_top: false,
             auto_start_work: true,
@@ -184,6 +188,11 @@ pub fn load(conn: &Connection) -> Result<Settings> {
         timer_opacity_percent: {
             let value = parse_u32(&map, "timer_opacity_percent", d.timer_opacity_percent);
             if (20..=100).contains(&value) { value } else { d.timer_opacity_percent }
+        },
+        hover_opacity_enabled: parse_bool(&map, "hover_opacity_enabled", d.hover_opacity_enabled),
+        hover_opacity_percent: {
+            let value = parse_u32(&map, "hover_opacity_percent", d.hover_opacity_percent);
+            if (20..=100).contains(&value) { value } else { d.hover_opacity_percent }
         },
         always_on_top: parse_bool(&map, "always_on_top", d.always_on_top),
         break_always_on_top: parse_bool(&map, "break_always_on_top", d.break_always_on_top),
@@ -367,6 +376,32 @@ mod tests {
         save_setting(&conn, "timer_opacity_percent", "40").unwrap();
         seed_defaults(&conn).unwrap();
         assert_eq!(load(&conn).unwrap().timer_opacity_percent, 40);
+    }
+
+    #[test]
+    fn hover_defaults_and_values_are_independent() {
+        let conn = setup();
+        seed_defaults(&conn).unwrap();
+        let initial = load(&conn).unwrap();
+        assert!(!initial.hover_opacity_enabled);
+        assert_eq!(initial.hover_opacity_percent, 100);
+        save_setting(&conn, "timer_opacity_percent", "90").unwrap();
+        save_setting(&conn, "hover_opacity_percent", "20").unwrap();
+        save_setting(&conn, "hover_opacity_enabled", "true").unwrap();
+        let updated = load(&conn).unwrap();
+        assert_eq!(updated.timer_opacity_percent, 90);
+        assert_eq!(updated.hover_opacity_percent, 20);
+        assert!(updated.hover_opacity_enabled);
+        save_setting(&conn, "hover_opacity_enabled", "false").unwrap();
+        seed_defaults(&conn).unwrap();
+        let disabled = load(&conn).unwrap();
+        assert_eq!(disabled.timer_opacity_percent, 90);
+        assert_eq!(disabled.hover_opacity_percent, 20);
+        assert!(!disabled.hover_opacity_enabled);
+        for invalid in ["0", "19", "101", "-1", "NaN"] {
+            save_setting(&conn, "hover_opacity_percent", invalid).unwrap();
+            assert_eq!(load(&conn).unwrap().hover_opacity_percent, 100);
+        }
     }
 
     #[test]

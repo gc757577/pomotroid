@@ -83,22 +83,34 @@ pub fn settings_set(
     app: AppHandle,
 ) -> Result<Settings, String> {
     // Appearance-only writes must not reconfigure the timer or emit timer:reset.
-    if key == "timer_opacity_percent" {
-        let percent = value.parse::<u32>().map_err(|_| "불투명도는 정수여야 합니다.".to_string())?;
-        crate::window_opacity::validate(percent)?;
+    if matches!(key.as_str(), "timer_opacity_percent" | "hover_opacity_enabled" | "hover_opacity_percent") {
         let window = app.get_webview_window("main").ok_or("타이머 창을 찾을 수 없습니다.")?;
         let mut conn = db.lock().map_err(|e| e.to_string())?;
         let previous = settings::load(&conn).map_err(|e| e.to_string())?;
-        crate::window_opacity::apply(&window, percent)?;
+        let mut candidate = previous.clone();
+        let stored = if key == "hover_opacity_enabled" {
+            candidate.hover_opacity_enabled = value.parse::<bool>().map_err(|_| "호버 스위치 값이 올바르지 않습니다.".to_string())?;
+            candidate.hover_opacity_enabled.to_string()
+        } else {
+            let percent = value.parse::<u32>().map_err(|_| "불투명도는 정수여야 합니다.".to_string())?;
+            crate::window_opacity::validate(percent)?;
+            if key == "timer_opacity_percent" { candidate.timer_opacity_percent = percent; }
+            else { candidate.hover_opacity_percent = percent; }
+            percent.to_string()
+        };
+        if let Err(error) = crate::window_opacity::configure(&window, &candidate) {
+            let _ = crate::window_opacity::configure(&window, &previous);
+            return Err(error);
+        }
         let saved = (|| -> Result<Settings, String> {
             let tx = conn.transaction().map_err(|e| e.to_string())?;
-            settings::save_setting(&tx, &key, &percent.to_string()).map_err(|e| e.to_string())?;
+            settings::save_setting(&tx, &key, &stored).map_err(|e| e.to_string())?;
             let updated = settings::load(&tx).map_err(|e| e.to_string())?;
             tx.commit().map_err(|e| e.to_string())?;
             Ok(updated)
         })();
         if saved.is_err() {
-            if let Err(error) = crate::window_opacity::apply(&window, previous.timer_opacity_percent) {
+            if let Err(error) = crate::window_opacity::configure(&window, &previous) {
                 log::error!("[window-opacity] rollback failed: {error}");
             }
         }
@@ -279,7 +291,7 @@ pub fn settings_reset_defaults(
     *tray_state.countdown_mode.lock().unwrap() = new_settings.dial_countdown;
 
     if let Some(window) = app.get_webview_window("main") {
-        crate::window_opacity::apply(&window, new_settings.timer_opacity_percent)?;
+        crate::window_opacity::configure(&window, &new_settings)?;
     }
 
     // Broadcast a reset snapshot so the frontend dial and display reflect the
