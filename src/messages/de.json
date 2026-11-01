@@ -26,6 +26,8 @@
   "timer_toggle_countdown_desc": "Der Bogen beginnt voll und nimmt im Laufe der Zeit ab.",
   "timer_reset": "Zurücksetzen",
   "timer_reset_defaults": "Auf Standardwerte zurücksetzen",
+  "appearance_timer_opacity": "Deckkraft des Timerfensters",
+  "appearance_timer_opacity_desc": "Nur das Timerfenster. Wird nach der Anpassung gespeichert.",
   "appearance_group_mode": "Modus",
   "appearance_mode_auto": "Auto",
   "appearance_mode_light": "Hell",

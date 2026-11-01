@@ -8,6 +8,7 @@ pub mod themes;
 pub mod timer;
 pub mod tray;
 pub mod websocket;
+pub mod window_opacity;
 
 use std::sync::Arc;
 
@@ -30,7 +31,7 @@ use commands::{
     stats_get_detailed, stats_get_heatmap,
     themes_list,
     timer_get_state, timer_reset, timer_restart_round, timer_skip, timer_toggle,
-    window_set_visibility,
+    window_set_visibility, window_preview_opacity,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -58,6 +59,26 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .on_window_event(|window, event| {
+            // Closing a webview does not guarantee Svelte onDestroy will run.
+            // Discard an unfinished preview when the settings window is gone.
+            if window.label() == "settings" && matches!(event, tauri::WindowEvent::Destroyed) {
+                let app = window.app_handle();
+                if let (Some(db), Some(main)) = (
+                    app.try_state::<db::DbState>(),
+                    app.get_webview_window("main"),
+                ) {
+                    let percent = db.lock().ok()
+                        .and_then(|conn| settings::load(&conn).ok())
+                        .map(|saved| saved.timer_opacity_percent);
+                    if let Some(percent) = percent {
+                        if let Err(error) = window_opacity::apply(&main, percent) {
+                            log::error!("[window-opacity] restore after settings close failed: {error}");
+                        }
+                    }
+                }
+            }
+        })
         .setup(|app| {
             // Capture Rust panics to the log file before the process terminates.
             std::panic::set_hook(Box::new(|info| {
@@ -210,6 +231,13 @@ pub fn run() {
             // still hidden at this point so there is no visible flash.
             #[cfg(not(target_os = "macos"))]
             let _ = main_window.set_decorations(false);
+
+            // Apply before the frontend shows the timer to avoid an opaque flash.
+            window_opacity::install(&main_window)?;
+            if let Err(error) = window_opacity::apply(&main_window, initial_settings.timer_opacity_percent) {
+                log::error!("[window-opacity] startup apply failed: {error}");
+                let _ = window_opacity::apply(&main_window, 100);
+            }
 
             // Enable macOS window tiling/arrangement.
             //
@@ -401,6 +429,7 @@ pub fn run() {
             stats_get_heatmap,
             // Window
             window_set_visibility,
+            window_preview_opacity,
             // Shortcuts
             shortcuts_reload,
             // Audio

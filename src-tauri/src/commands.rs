@@ -82,6 +82,31 @@ pub fn settings_set(
     ws_state: State<'_, Arc<WsState>>,
     app: AppHandle,
 ) -> Result<Settings, String> {
+    // Appearance-only writes must not reconfigure the timer or emit timer:reset.
+    if key == "timer_opacity_percent" {
+        let percent = value.parse::<u32>().map_err(|_| "불투명도는 정수여야 합니다.".to_string())?;
+        crate::window_opacity::validate(percent)?;
+        let window = app.get_webview_window("main").ok_or("타이머 창을 찾을 수 없습니다.")?;
+        let mut conn = db.lock().map_err(|e| e.to_string())?;
+        let previous = settings::load(&conn).map_err(|e| e.to_string())?;
+        crate::window_opacity::apply(&window, percent)?;
+        let saved = (|| -> Result<Settings, String> {
+            let tx = conn.transaction().map_err(|e| e.to_string())?;
+            settings::save_setting(&tx, &key, &percent.to_string()).map_err(|e| e.to_string())?;
+            let updated = settings::load(&tx).map_err(|e| e.to_string())?;
+            tx.commit().map_err(|e| e.to_string())?;
+            Ok(updated)
+        })();
+        if saved.is_err() {
+            if let Err(error) = crate::window_opacity::apply(&window, previous.timer_opacity_percent) {
+                log::error!("[window-opacity] rollback failed: {error}");
+            }
+        }
+        let updated = saved?;
+        drop(conn);
+        app.emit("settings:changed", &updated).ok();
+        return Ok(updated);
+    }
     log::debug!("[settings] set {key}={value}");
     let new_settings = {
         let conn = db.lock().map_err(|e| e.to_string())?;
@@ -252,6 +277,10 @@ pub fn settings_reset_defaults(
 
     timer.apply_settings(new_settings.clone());
     *tray_state.countdown_mode.lock().unwrap() = new_settings.dial_countdown;
+
+    if let Some(window) = app.get_webview_window("main") {
+        crate::window_opacity::apply(&window, new_settings.timer_opacity_percent)?;
+    }
 
     // Broadcast a reset snapshot so the frontend dial and display reflect the
     // restored default durations without requiring the user to manually reset.
@@ -708,6 +737,13 @@ pub async fn install_update(app: AppHandle) -> Result<(), String> {
         })?;
     log::info!("[updater] install complete — relaunching");
     app.restart();
+}
+
+/// Change only the timer's native opacity; never persist a preview.
+#[tauri::command]
+pub fn window_preview_opacity(percent: u32, app: AppHandle) -> Result<(), String> {
+    let window = app.get_webview_window("main").ok_or("타이머 창을 찾을 수 없습니다.")?;
+    crate::window_opacity::apply(&window, percent)
 }
 
 fn ensure_updates_allowed(app: &AppHandle) -> Result<(), String> {

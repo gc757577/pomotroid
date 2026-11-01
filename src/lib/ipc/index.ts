@@ -42,6 +42,9 @@ export const notificationShow = (title: string, body: string) =>
 
 // --- Window commands ---
 
+export const previewTimerOpacity = (percent: number) =>
+  invoke<void>('window_preview_opacity', { percent });
+
 export const setWindowVisibility = (visible: boolean) =>
   invoke<void>('window_set_visibility', { visible });
 

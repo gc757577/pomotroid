@@ -18,6 +18,7 @@ export interface TimerState {
 
 /** Mirrors Rust `Settings` struct returned by `settings_get`. */
 export interface Settings {
+  timer_opacity_percent: number;
   time_work_secs: number;
   time_short_break_secs: number;
   time_long_break_secs: number;

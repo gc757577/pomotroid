@@ -26,6 +26,8 @@
   "timer_toggle_countdown_desc": "アークが満タンから始まり、時間の経過とともに減少します。",
   "timer_reset": "リセット",
   "timer_reset_defaults": "デフォルトにリセット",
+  "appearance_timer_opacity": "タイマーウィンドウの不透明度",
+  "appearance_timer_opacity_desc": "タイマーのみに適用。調整完了時に保存します。",
   "appearance_group_mode": "モード",
   "appearance_mode_auto": "自動",
   "appearance_mode_light": "ライト",

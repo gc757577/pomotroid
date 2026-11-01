@@ -12,6 +12,7 @@ use std::collections::HashMap;
 /// This struct is serialized to JSON and sent to the Svelte frontend via Tauri IPC.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Settings {
+    pub timer_opacity_percent: u32,
     pub always_on_top: bool,
     pub break_always_on_top: bool,
     pub auto_start_work: bool,
@@ -70,6 +71,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            timer_opacity_percent: 100,
             always_on_top: false,
             break_always_on_top: false,
             auto_start_work: true,
@@ -179,6 +181,10 @@ pub fn load(conn: &Connection) -> Result<Settings> {
     log::debug!("[settings] loaded {} keys from db", map.len());
     let d = Settings::default();
     Ok(Settings {
+        timer_opacity_percent: {
+            let value = parse_u32(&map, "timer_opacity_percent", d.timer_opacity_percent);
+            if (20..=100).contains(&value) { value } else { d.timer_opacity_percent }
+        },
         always_on_top: parse_bool(&map, "always_on_top", d.always_on_top),
         break_always_on_top: parse_bool(&map, "break_always_on_top", d.break_always_on_top),
         auto_start_work: parse_bool(&map, "auto_start_work", d.auto_start_work),
@@ -315,6 +321,8 @@ mod tests {
         seed_defaults(&conn).unwrap();
         let s = load(&conn).unwrap();
 
+        assert_eq!(s.timer_opacity_percent, 100);
+
         assert_eq!(s.time_work_secs, 25 * 60);
         assert_eq!(s.time_short_break_secs, 5 * 60);
         assert_eq!(s.time_long_break_secs, 15 * 60);
@@ -342,6 +350,23 @@ mod tests {
         assert_eq!(s.theme_dark, "Pomotroid");
         assert_eq!(s.language, "auto");
         assert!(!s.verbose_logging);
+    }
+
+    #[test]
+    fn opacity_round_trip_and_invalid_values_fall_back() {
+        let conn = setup();
+        seed_defaults(&conn).unwrap();
+        for value in ["20", "70", "100"] {
+            save_setting(&conn, "timer_opacity_percent", value).unwrap();
+            assert_eq!(load(&conn).unwrap().timer_opacity_percent, value.parse::<u32>().unwrap());
+        }
+        for value in ["0", "19", "101", "-1", "NaN", "50.5"] {
+            save_setting(&conn, "timer_opacity_percent", value).unwrap();
+            assert_eq!(load(&conn).unwrap().timer_opacity_percent, 100);
+        }
+        save_setting(&conn, "timer_opacity_percent", "40").unwrap();
+        seed_defaults(&conn).unwrap();
+        assert_eq!(load(&conn).unwrap().timer_opacity_percent, 40);
     }
 
     #[test]

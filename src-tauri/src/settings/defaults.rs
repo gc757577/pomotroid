@@ -5,6 +5,7 @@
 /// Time values are stored in **seconds** (since MIGRATION_2).
 /// Volume is stored on a **0–100** integer scale; converted to 0.0–1.0 on load.
 pub const DEFAULTS: &[(&str, &str)] = &[
+    ("timer_opacity_percent", "100"),
     ("always_on_top", "false"),
     ("break_always_on_top", "false"),
     ("auto_start_work", "true"),

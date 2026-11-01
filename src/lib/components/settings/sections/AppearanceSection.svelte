@@ -1,14 +1,71 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
+  import { get } from 'svelte/store';
   import type { Theme } from '$lib/types';
   import { settings } from '$lib/stores/settings';
   import { applyTheme } from '$lib/stores/theme';
-  import { getThemes, setSetting, onThemesChanged } from '$lib/ipc';
+  import { getThemes, setSetting, onThemesChanged, previewTimerOpacity } from '$lib/ipc';
+  import { isWindows } from '$lib/utils/platform';
   import { resolveThemeName } from '$lib/utils/theme';
   import type { UnlistenFn } from '@tauri-apps/api/event';
   import * as m from '$paraglide/messages.js';
 
   let themes = $state<Theme[]>([]);
+  let opacity = $state($settings.timer_opacity_percent);
+  let adjustingOpacity = $state(false);
+  let opacityError = $state('');
+  let opacityQueue = Promise.resolve();
+  let opacityRevision = 0;
+
+  $effect(() => {
+    const saved = $settings.timer_opacity_percent;
+    if (!adjustingOpacity) opacity = saved;
+  });
+
+  function queueOpacity(action: () => Promise<void>) {
+    opacityQueue = opacityQueue.then(action).catch((error) => {
+      opacityError = String(error);
+      adjustingOpacity = false;
+      opacity = get(settings).timer_opacity_percent;
+    });
+  }
+
+  function previewOpacity(event: Event) {
+    opacity = (event.currentTarget as HTMLInputElement).valueAsNumber;
+    adjustingOpacity = true;
+    opacityError = '';
+    opacityRevision += 1;
+    const value = opacity;
+    queueOpacity(() => previewTimerOpacity(value));
+  }
+
+  function commitOpacity() {
+    const value = opacity;
+    const revision = opacityRevision;
+    queueOpacity(async () => {
+      settings.set(await setSetting('timer_opacity_percent', String(value)));
+      if (revision === opacityRevision) adjustingOpacity = false;
+    });
+  }
+
+  function restoreOpacity() {
+    opacityRevision += 1;
+    opacity = get(settings).timer_opacity_percent;
+    adjustingOpacity = false;
+    queueOpacity(async () => {
+      await previewTimerOpacity(get(settings).timer_opacity_percent);
+      adjustingOpacity = false;
+    });
+  }
+
+  onDestroy(() => {
+    if (isWindows) {
+      // Runs after queued commits, including a release just before closing.
+      void opacityQueue
+        .then(() => previewTimerOpacity(get(settings).timer_opacity_percent))
+        .catch(() => {});
+    }
+  });
   let osDark = $state(window.matchMedia('(prefers-color-scheme: dark)').matches);
   // Accordion: at most one picker open at a time.
   let openPicker = $state<'light' | 'dark' | null>(null);
@@ -76,6 +133,38 @@
 </script>
 
 <div class="section">
+  {#if isWindows}
+    <div class="opacity-control">
+      <div class="opacity-heading">
+        <label for="timer-opacity">{m.appearance_timer_opacity()}</label>
+        <output for="timer-opacity">{opacity}%</output>
+      </div>
+      <input
+        id="timer-opacity"
+        type="range"
+        min="20"
+        max="100"
+        step="1"
+        value={opacity}
+        aria-describedby="timer-opacity-description"
+        aria-valuetext={`${opacity}%`}
+        oninput={previewOpacity}
+        onchange={commitOpacity}
+        onpointercancel={restoreOpacity}
+        onblur={() => {
+          if (adjustingOpacity) restoreOpacity();
+        }}
+        onkeydown={(event) => {
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            restoreOpacity();
+          }
+        }}
+      />
+      <p id="timer-opacity-description">{m.appearance_timer_opacity_desc()}</p>
+      {#if opacityError}<p class="opacity-error" role="alert">{opacityError}</p>{/if}
+    </div>
+  {/if}
   <!-- Mode selector -->
   <div class="group-label">{m.appearance_group_mode()}</div>
   <div class="mode-selector">
@@ -252,6 +341,34 @@
 </div>
 
 <style>
+  .opacity-control {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-separator);
+  }
+
+  .opacity-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+  }
+
+  .opacity-control input {
+    width: 100%;
+    margin: 12px 0 4px;
+    accent-color: var(--color-focus-round);
+  }
+
+  .opacity-control p {
+    margin: 4px 0 0;
+    font-size: 0.72rem;
+    color: var(--color-foreground-darker);
+  }
+
+  .opacity-control .opacity-error {
+    color: var(--color-focus-round);
+  }
+
   .section {
     display: flex;
     flex-direction: column;

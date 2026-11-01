@@ -26,6 +26,8 @@
   "timer_toggle_countdown_desc": "Yay dolu başlar ve zaman geçtikçe azalır.",
   "timer_reset": "Sıfırla",
   "timer_reset_defaults": "Varsayılanlara Sıfırla",
+  "appearance_timer_opacity": "Zamanlayıcı penceresi opaklığı",
+  "appearance_timer_opacity_desc": "Yalnızca zamanlayıcı penceresi. Ayarlama bittiğinde kaydedilir.",
   "appearance_group_mode": "Mod",
   "appearance_mode_auto": "Otomatik",
   "appearance_mode_light": "Açık",

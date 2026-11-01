@@ -272,7 +272,11 @@ mod tests {
         events
     }
 
-    fn collect_until_complete(rx: &Receiver<TimerEvent>, timeout: Duration) -> Vec<TimerEvent> {
+    fn collect_until(
+        rx: &Receiver<TimerEvent>,
+        timeout: Duration,
+        done: impl Fn(&TimerEvent) -> bool,
+    ) -> Vec<TimerEvent> {
         let deadline = Instant::now() + timeout;
         let mut events = Vec::new();
         loop {
@@ -282,15 +286,36 @@ mod tests {
             }
             match rx.recv_timeout(remaining) {
                 Ok(e) => {
-                    let done = matches!(e, TimerEvent::Complete { .. });
+                    let finished = done(&e);
                     events.push(e);
-                    if done {
+                    if finished {
                         break;
                     }
                 }
                 Err(_) => break,
             }
         }
+        events
+    }
+
+    fn collect_until_complete(rx: &Receiver<TimerEvent>, timeout: Duration) -> Vec<TimerEvent> {
+        collect_until(rx, timeout, |e| matches!(e, TimerEvent::Complete { .. }))
+    }
+
+    fn wait_for_tick(rx: &Receiver<TimerEvent>, target: u32) -> Vec<TimerEvent> {
+        let events = collect_until(rx, Duration::from_secs(2), |e| {
+            matches!(e, TimerEvent::Tick { elapsed_secs, .. } if *elapsed_secs >= target)
+        });
+        assert!(
+            matches!(events.last(), Some(TimerEvent::Tick { elapsed_secs, .. }) if *elapsed_secs >= target),
+            "timer must reach tick {target} before the next command"
+        );
+        events
+    }
+
+    fn wait_for_pause(rx: &Receiver<TimerEvent>) -> Vec<TimerEvent> {
+        let events = collect_until(rx, Duration::from_secs(2), |e| matches!(e, TimerEvent::Paused { .. }));
+        assert!(matches!(events.last(), Some(TimerEvent::Paused { .. })), "expected Pause acknowledgement");
         events
     }
 
@@ -332,13 +357,12 @@ mod tests {
         let (handle, rx) = spawn(6, TICK);
         handle.send(TimerCommand::Start);
 
-        // Let 2 ticks fire, then pause.
-        std::thread::sleep(TICK * 2 + TICK / 2);
+        let mut events_before_resume = wait_for_tick(&rx, 2);
         handle.send(TimerCommand::Pause);
+        events_before_resume.extend(wait_for_pause(&rx));
 
-        // Collect events so far.
-        std::thread::sleep(TICK * 3); // no ticks should arrive during this gap
-        let events_before_resume = drain(&rx);
+        // The interval starts only after Pause is acknowledged.
+        assert!(rx.recv_timeout(TICK * 3).is_err(), "no events must fire while paused");
 
         let paused = events_before_resume
             .iter()
@@ -413,24 +437,35 @@ mod tests {
         let (handle, rx) = spawn(10, TICK);
         handle.send(TimerCommand::Start);
 
-        // Let 3 ticks fire, then suspend.
-        std::thread::sleep(TICK * 3 + TICK / 2);
+        // Waiting 70 ms does not guarantee 3 ticks on Windows: the engine
+        // thread may be scheduled late. Observe progress before suspending.
+        let deadline = Instant::now() + Duration::from_secs(2);
+        let mut last_tick = 0;
+        while last_tick < 3 {
+            let event = rx
+                .recv_timeout(deadline.saturating_duration_since(Instant::now()))
+                .expect("timer must reach its third tick before Suspend");
+            if let TimerEvent::Tick { elapsed_secs, .. } = event {
+                last_tick = elapsed_secs;
+            }
+        }
         handle.send(TimerCommand::Suspend);
 
-        let before = drain(&rx);
-        let suspended_elapsed = before.iter().find_map(|e| {
-            if let TimerEvent::Suspended { elapsed_secs } = e {
-                Some(*elapsed_secs)
-            } else {
-                None
+        // Wait for the acknowledgement instead of assuming a 5 ms quiet
+        // period means the engine has already processed Suspend.
+        let deadline = Instant::now() + Duration::from_secs(2);
+        let saved = loop {
+            match rx
+                .recv_timeout(deadline.saturating_duration_since(Instant::now()))
+                .expect("expected Suspended acknowledgement")
+            {
+                TimerEvent::Tick { elapsed_secs, .. } => last_tick = elapsed_secs,
+                TimerEvent::Suspended { elapsed_secs } => break elapsed_secs,
+                _ => {}
             }
-        });
-        assert!(
-            suspended_elapsed.is_some(),
-            "expected Suspended event with elapsed_secs"
-        );
-        let saved = suspended_elapsed.unwrap();
+        };
         assert!(saved >= 3, "elapsed at suspend should be >= 3 s, got {saved}");
+        assert_eq!(saved, last_tick, "Suspend must preserve the last emitted tick");
 
         // Gap: simulate OS sleep (no ticks must fire).
         std::thread::sleep(TICK * 5);
@@ -536,8 +571,7 @@ mod tests {
         // should run at least one more tick first.
         let (handle, rx) = spawn(10, TICK);
         handle.send(TimerCommand::Start);
-        // Let 5 ticks fire so elapsed_secs = 5.
-        std::thread::sleep(TICK * 5 + TICK / 2);
+        wait_for_tick(&rx, 5);
         // Prime with duration below elapsed — without the clamp this would fire
         // Complete on the very next tick.
         handle.send(TimerCommand::Prime { duration_secs: 2 });
@@ -563,11 +597,9 @@ mod tests {
         // must not cause immediate completion on the first tick after Resume.
         let (handle, rx) = spawn(10, TICK);
         handle.send(TimerCommand::Start);
-        // Let 5 ticks fire, then pause.
-        std::thread::sleep(TICK * 5 + TICK / 2);
+        wait_for_tick(&rx, 5);
         handle.send(TimerCommand::Pause);
-        std::thread::sleep(TICK); // let Paused event arrive
-        drain(&rx);
+        wait_for_pause(&rx);
 
         // Prime with duration below elapsed.
         handle.send(TimerCommand::Prime { duration_secs: 2 });

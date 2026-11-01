@@ -26,6 +26,8 @@
   "timer_toggle_countdown_desc": "El arco comienza lleno y se reduce a medida que pasa el tiempo.",
   "timer_reset": "Restablecer",
   "timer_reset_defaults": "Restablecer valores predeterminados",
+  "appearance_timer_opacity": "Opacidad de la ventana del temporizador",
+  "appearance_timer_opacity_desc": "Solo la ventana del temporizador. Se guarda al terminar el ajuste.",
   "appearance_group_mode": "Modo",
   "appearance_mode_auto": "Auto",
   "appearance_mode_light": "Claro",

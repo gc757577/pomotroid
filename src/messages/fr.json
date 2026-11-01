@@ -26,6 +26,8 @@
   "timer_toggle_countdown_desc": "L'arc commence plein et se réduit au fil du temps.",
   "timer_reset": "Réinitialiser",
   "timer_reset_defaults": "Rétablir les paramètres par défaut",
+  "appearance_timer_opacity": "Opacité de la fenêtre du minuteur",
+  "appearance_timer_opacity_desc": "Uniquement le minuteur. Enregistrée à la fin du réglage.",
   "appearance_group_mode": "Mode",
   "appearance_mode_auto": "Auto",
   "appearance_mode_light": "Clair",

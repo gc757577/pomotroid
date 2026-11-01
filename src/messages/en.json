@@ -26,6 +26,8 @@
   "timer_toggle_countdown_desc": "Arc starts full and subtracts as time passes.",
   "timer_reset": "Reset",
   "timer_reset_defaults": "Reset to Defaults",
+  "appearance_timer_opacity": "Timer window opacity",
+  "appearance_timer_opacity_desc": "Only the timer window. Saved when you finish adjusting.",
   "appearance_group_mode": "Mode",
   "appearance_mode_auto": "Auto",
   "appearance_mode_light": "Light",

@@ -26,6 +26,8 @@
   "timer_toggle_countdown_desc": "表盘从满格开始，随时间推移减少。",
   "timer_reset": "重置",
   "timer_reset_defaults": "恢复默认设置",
+  "appearance_timer_opacity": "计时器窗口不透明度",
+  "appearance_timer_opacity_desc": "仅应用于计时器窗口，调整完成后保存。",
   "appearance_group_mode": "模式",
   "appearance_mode_auto": "自动",
   "appearance_mode_light": "浅色",
