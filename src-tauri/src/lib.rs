@@ -9,6 +9,8 @@ pub mod timer;
 pub mod tray;
 pub mod websocket;
 pub mod window_opacity;
+#[cfg(all(debug_assertions, target_os = "windows"))]
+mod desktop_probe;
 
 use std::sync::Arc;
 
@@ -377,7 +379,7 @@ pub fn run() {
                             let _ = win_for_close.hide();
                         } else {
                             // Main window is truly closing — close child windows if open.
-                            for label in ["settings", "stats"] {
+                            for label in ["settings", "stats", "desktop-probe"] {
                                 if let Some(win) = app_for_close.get_webview_window(label) {
                                     let _ = win.close();
                                 }
@@ -406,6 +408,12 @@ pub fn run() {
                 }
             });
 
+            #[cfg(all(debug_assertions, target_os = "windows"))]
+            if std::env::var("POMOTROID_DESKTOP_PROBE").as_deref() == Ok("1") {
+                if let Err(error) = desktop_probe::start(&main_window) {
+                    log::error!("[desktop-probe] startup failed: {error}");
+                }
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -429,6 +437,7 @@ pub fn run() {
             // Window
             window_set_visibility,
             window_preview_opacity,
+            commands::desktop_probe_action,
             // Shortcuts
             shortcuts_reload,
             // Audio

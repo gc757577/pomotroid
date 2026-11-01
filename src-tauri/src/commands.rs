@@ -804,6 +804,22 @@ pub struct HeatmapStats {
     pub longest_streak: u32,
 }
 
+/// The debug probe has no database or timer access. Native work stays on the UI thread.
+#[tauri::command]
+pub async fn desktop_probe_action(window: tauri::WebviewWindow, action: String) -> Result<serde_json::Value, String> {
+    #[cfg(all(debug_assertions, target_os = "windows"))]
+    {
+        if !window.label().starts_with("desktop-probe-") { return Err("시험 창에서만 사용할 수 있습니다.".into()); }
+        let app = window.app_handle().clone();
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        app.run_on_main_thread(move || { let _ = tx.send(crate::desktop_probe::action(&window, &action)); })
+            .map_err(|e| e.to_string())?;
+        rx.await.map_err(|e| e.to_string())?
+    }
+    #[cfg(not(all(debug_assertions, target_os = "windows")))]
+    { let _ = (window, action); Err("Windows 개발 검증에서만 사용할 수 있습니다.".into()) }
+}
+
 #[cfg(test)]
 mod tests {
     use rusqlite::Connection;

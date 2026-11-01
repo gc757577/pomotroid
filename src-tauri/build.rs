@@ -30,6 +30,18 @@ fn main() {
     println!("cargo:rustc-env=APP_BUILD_VERSION={build_version}");
     println!("cargo:rustc-env=APP_BUILD_SHA={full_sha}");
 
+    println!("cargo:rerun-if-env-changed=POMOTROID_DESKTOP_PROBE");
+    println!("cargo:rerun-if-changed=desktop-probe.manifest.xml");
+    #[cfg(target_os = "windows")]
+    if std::env::var("PROFILE").as_deref() == Ok("debug")
+        && std::env::var("POMOTROID_DESKTOP_PROBE").as_deref() == Ok("1")
+    {
+        let windows = tauri_build::WindowsAttributes::new()
+            .app_manifest(include_str!("desktop-probe.manifest.xml"));
+        tauri_build::try_build(tauri_build::Attributes::new().windows_attributes(windows))
+            .expect("failed to build desktop probe resources");
+        return;
+    }
     tauri_build::build()
 }
 
