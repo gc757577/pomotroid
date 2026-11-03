@@ -9,8 +9,8 @@ pub mod timer;
 pub mod tray;
 pub mod websocket;
 pub mod window_opacity;
-#[cfg(all(debug_assertions, target_os = "windows"))]
-mod desktop_probe;
+#[cfg(target_os = "windows")]
+mod desktop_widget;
 
 use std::sync::Arc;
 
@@ -408,12 +408,8 @@ pub fn run() {
                 }
             });
 
-            #[cfg(all(debug_assertions, target_os = "windows"))]
-            if std::env::var("POMOTROID_DESKTOP_PROBE").as_deref() == Ok("1") {
-                if let Err(error) = desktop_probe::start(&main_window) {
-                    log::error!("[desktop-probe] startup failed: {error}");
-                }
-            }
+            #[cfg(target_os = "windows")]
+            desktop_widget::start(&main_window, &initial_settings)?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -437,7 +433,7 @@ pub fn run() {
             // Window
             window_set_visibility,
             window_preview_opacity,
-            commands::desktop_probe_action,
+            commands::widget_action,
             // Shortcuts
             shortcuts_reload,
             // Audio

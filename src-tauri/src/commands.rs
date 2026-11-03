@@ -83,6 +83,23 @@ pub fn settings_set(
     app: AppHandle,
 ) -> Result<Settings, String> {
     // Appearance-only writes must not reconfigure the timer or emit timer:reset.
+    if key == "widget_enabled" {
+        let enabled = value.parse::<bool>().map_err(|_| "위젯 표시 값이 올바르지 않습니다.")?;
+        let conn = db.lock().map_err(|e| e.to_string())?;
+        let previous = settings::load(&conn).map_err(|e| e.to_string())?;
+        let mut candidate = previous.clone(); candidate.widget_enabled = enabled;
+        #[cfg(target_os = "windows")]
+        crate::desktop_widget::configure(&candidate)?;
+        #[cfg(not(target_os = "windows"))]
+        if enabled { return Err("바탕화면 위젯은 Windows에서 사용할 수 있습니다.".into()); }
+        if let Err(error) = settings::save_setting(&conn, &key, &enabled.to_string()) {
+            #[cfg(target_os = "windows")]
+            let _ = crate::desktop_widget::configure(&previous);
+            return Err(error.to_string());
+        }
+        drop(conn); app.emit("settings:changed", &candidate).ok(); return Ok(candidate);
+    }
+    if key.starts_with("widget_") { return Err("위젯 위치는 위젯에서 변경해 주세요.".into()); }
     if matches!(key.as_str(), "timer_opacity_percent" | "hover_opacity_enabled" | "hover_opacity_percent") {
         let window = app.get_webview_window("main").ok_or("타이머 창을 찾을 수 없습니다.")?;
         let mut conn = db.lock().map_err(|e| e.to_string())?;
@@ -293,6 +310,8 @@ pub fn settings_reset_defaults(
     if let Some(window) = app.get_webview_window("main") {
         crate::window_opacity::configure(&window, &new_settings)?;
     }
+    #[cfg(target_os = "windows")]
+    crate::desktop_widget::configure(&new_settings)?;
 
     // Broadcast a reset snapshot so the frontend dial and display reflect the
     // restored default durations without requiring the user to manually reset.
@@ -804,20 +823,21 @@ pub struct HeatmapStats {
     pub longest_streak: u32,
 }
 
-/// The debug probe has no database or timer access. Native work stays on the UI thread.
+/// Native widget work stays on the UI thread; the caller is the fixed child WebView.
 #[tauri::command]
-pub async fn desktop_probe_action(window: tauri::WebviewWindow, action: String) -> Result<serde_json::Value, String> {
-    #[cfg(all(debug_assertions, target_os = "windows"))]
+pub async fn widget_action(webview: tauri::Webview, action: String, generation: u64, geometry: Option<serde_json::Value>, save: Option<bool>) -> Result<serde_json::Value, String> {
+    #[cfg(target_os = "windows")]
     {
-        if !window.label().starts_with("desktop-probe-") { return Err("시험 창에서만 사용할 수 있습니다.".into()); }
-        let app = window.app_handle().clone();
+        if webview.label() != crate::desktop_widget::VIEW { return Err("위젯에서만 사용할 수 있습니다.".into()); }
+        let geometry = geometry.map(serde_json::from_value).transpose().map_err(|e| e.to_string())?;
+        let app = webview.app_handle().clone();
         let (tx, rx) = tokio::sync::oneshot::channel();
-        app.run_on_main_thread(move || { let _ = tx.send(crate::desktop_probe::action(&window, &action)); })
+        app.run_on_main_thread(move || { let _ = tx.send(crate::desktop_widget::action(&webview, generation, &action, geometry, save.unwrap_or(false))); })
             .map_err(|e| e.to_string())?;
         rx.await.map_err(|e| e.to_string())?
     }
-    #[cfg(not(all(debug_assertions, target_os = "windows")))]
-    { let _ = (window, action); Err("Windows 개발 검증에서만 사용할 수 있습니다.".into()) }
+    #[cfg(not(target_os = "windows"))]
+    { let _ = (webview, action, generation, geometry, save); Err("Windows에서만 사용할 수 있습니다.".into()) }
 }
 
 #[cfg(test)]

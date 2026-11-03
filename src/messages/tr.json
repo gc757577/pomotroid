@@ -155,5 +155,12 @@
   "tooltip_dial_countdown": "Etkinleştirildiğinde, ilerleme yayı dolmak yerine sıfıra doğru geri sayar.",
   "tooltip_auto_start_work": "Bir mola bittiğinde sonraki çalışma turunu otomatik olarak başlat.",
   "tooltip_auto_start_break": "Bir çalışma turu tamamlandığında molayı otomatik olarak başlat.",
-  "tooltip_websocket": "Yayın yerleşimleri gibi harici entegrasyonlar için yerel bir WebSocket sunucusu etkinleştirir. Varsayılan olarak devre dışıdır."
+  "tooltip_websocket": "Yayın yerleşimleri gibi harici entegrasyonlar için yerel bir WebSocket sunucusu etkinleştirir. Varsayılan olarak devre dışıdır.",
+  "widget_enabled": "Masaüstü istatistik aracı",
+  "widget_enabled_desc": "Bugünkü odaklanmayı ve yıllık etkinliği masaüstünde gösterir.",
+  "widget_refresh_failed": "İstatistikler yenilenemedi.",
+  "widget_position_failed": "Araç konumu kaydedilemedi.",
+  "widget_move": "Taşımak için sürükleyin · ok tuşlarıyla ayarlayın",
+  "widget_resize": "Boyut için sürükleyin · ok tuşlarıyla ayarlayın",
+  "widget_open_failed": "Masaüstü aracı açılamadı."
 }

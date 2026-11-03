@@ -155,5 +155,12 @@
   "tooltip_dial_countdown": "启用后，进度弧从满倒计时至零，而非从零填充。",
   "tooltip_auto_start_work": "休息结束后自动开始下一个工作轮次。",
   "tooltip_auto_start_break": "工作轮次结束后自动开始休息。",
-  "tooltip_websocket": "启用本地 WebSocket 服务器，用于直播覆盖层等外部集成。默认禁用。"
+  "tooltip_websocket": "启用本地 WebSocket 服务器，用于直播覆盖层等外部集成。默认禁用。",
+  "widget_enabled": "桌面统计小组件",
+  "widget_enabled_desc": "在桌面显示今日专注和全年活动。",
+  "widget_refresh_failed": "无法刷新统计。",
+  "widget_position_failed": "无法保存组件位置。",
+  "widget_move": "拖动以移动 · 方向键调整",
+  "widget_resize": "拖动以调整大小 · 方向键调整",
+  "widget_open_failed": "无法打开桌面组件。"
 }

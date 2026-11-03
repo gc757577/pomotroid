@@ -5,6 +5,11 @@ import { writable } from 'svelte/store';
 import type { Settings } from '$lib/types';
 
 const defaults: Settings = {
+  widget_enabled: false,
+  widget_x: null,
+  widget_y: null,
+  widget_width: 760,
+  widget_height: 320,
   timer_opacity_percent: 100,
   hover_opacity_enabled: false,
   hover_opacity_percent: 100,

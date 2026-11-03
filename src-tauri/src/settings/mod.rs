@@ -12,6 +12,11 @@ use std::collections::HashMap;
 /// This struct is serialized to JSON and sent to the Svelte frontend via Tauri IPC.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Settings {
+    pub widget_enabled: bool,
+    pub widget_x: Option<i32>,
+    pub widget_y: Option<i32>,
+    pub widget_width: u32,
+    pub widget_height: u32,
     pub timer_opacity_percent: u32,
     pub hover_opacity_enabled: bool,
     pub hover_opacity_percent: u32,
@@ -73,6 +78,11 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            widget_enabled: false,
+            widget_x: None,
+            widget_y: None,
+            widget_width: 760,
+            widget_height: 320,
             timer_opacity_percent: 100,
             hover_opacity_enabled: false,
             hover_opacity_percent: 100,
@@ -185,6 +195,11 @@ pub fn load(conn: &Connection) -> Result<Settings> {
     log::debug!("[settings] loaded {} keys from db", map.len());
     let d = Settings::default();
     Ok(Settings {
+        widget_enabled: parse_bool(&map, "widget_enabled", d.widget_enabled),
+        widget_x: parse_opt_i32(&map, "widget_x"),
+        widget_y: parse_opt_i32(&map, "widget_y"),
+        widget_width: parse_u32(&map, "widget_width", d.widget_width).clamp(360, 2000),
+        widget_height: parse_u32(&map, "widget_height", d.widget_height).clamp(240, 1400),
         timer_opacity_percent: {
             let value = parse_u32(&map, "timer_opacity_percent", d.timer_opacity_percent);
             if (20..=100).contains(&value) { value } else { d.timer_opacity_percent }
@@ -528,5 +543,23 @@ mod tests {
         }
         let s = load(&conn).unwrap();
         assert!(!s.auto_start_work, "auto_start_work must be false after repeated false writes");
+    }
+
+    #[test]
+    fn widget_defaults_and_saved_geometry_survive_reload() {
+        let conn = setup(); seed_defaults(&conn).unwrap();
+        let initial = load(&conn).unwrap();
+        assert!(!initial.widget_enabled);
+        assert_eq!((initial.widget_width, initial.widget_height), (760, 320));
+        assert_eq!(initial.widget_x, None);
+        for (key, value) in [("widget_enabled", "true"), ("widget_x", "-1500"),
+            ("widget_y", "120"), ("widget_width", "680"), ("widget_height", "350")] {
+            save_setting(&conn, key, value).unwrap();
+        }
+        seed_defaults(&conn).unwrap();
+        let saved = load(&conn).unwrap();
+        assert!(saved.widget_enabled);
+        assert_eq!((saved.widget_x, saved.widget_y), (Some(-1500), Some(120)));
+        assert_eq!((saved.widget_width, saved.widget_height), (680, 350));
     }
 }

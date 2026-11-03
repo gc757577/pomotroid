@@ -8,7 +8,7 @@
   import { isWindows } from '$lib/utils/platform';
   import SettingsToggle from '$lib/components/settings/SettingsToggle.svelte';
   import { resolveThemeName } from '$lib/utils/theme';
-  import type { UnlistenFn } from '@tauri-apps/api/event';
+  import { listen, type UnlistenFn } from '@tauri-apps/api/event';
   import * as m from '$paraglide/messages.js';
 
   let themes = $state<Theme[]>([]);
@@ -20,6 +20,14 @@
   let hoverOpacity = $state($settings.hover_opacity_percent);
   let adjustingHover = $state(false);
   let hoverRevision = 0;
+  let widgetError = $state('');
+  let widgetQueue = Promise.resolve();
+  function toggleWidget() {
+    widgetQueue = widgetQueue.then(async () => {
+      widgetError = '';
+      settings.set(await setSetting('widget_enabled', String(!get(settings).widget_enabled)));
+    }).catch(() => { widgetError = m.widget_open_failed(); });
+  }
 
   $effect(() => {
     const saved = $settings.hover_opacity_percent;
@@ -114,6 +122,7 @@
 
   onMount(() => {
     const cleanups: UnlistenFn[] = [];
+    const widgetErrors = listen('widget:error', () => { widgetError = m.widget_open_failed(); });
 
     // Track live OS color scheme changes to update picker highlights.
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -133,6 +142,7 @@
     })();
 
     return () => {
+      void widgetErrors.then(fn => fn());
       for (const fn of cleanups) fn();
     };
   });
@@ -160,6 +170,8 @@
 
 <div class="section">
   {#if isWindows}
+    <SettingsToggle label={m.widget_enabled()} description={m.widget_enabled_desc()} checked={$settings.widget_enabled} onclick={toggleWidget} />
+    {#if widgetError}<p class="opacity-error" role="alert">{widgetError}</p>{/if}
     <div class="opacity-control">
       <div class="opacity-heading">
         <label for="timer-opacity">{m.appearance_timer_opacity()}</label>

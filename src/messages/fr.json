@@ -155,5 +155,12 @@
   "tooltip_dial_countdown": "Lorsqu'activé, l'arc de progression compte à rebours vers zéro au lieu de se remplir.",
   "tooltip_auto_start_work": "Démarrer automatiquement la prochaine session de travail lorsqu'une pause se termine.",
   "tooltip_auto_start_break": "Démarrer automatiquement la pause lorsqu'une session de travail se termine.",
-  "tooltip_websocket": "Active un serveur WebSocket local pour les intégrations externes telles que les overlays de streaming. Désactivé par défaut."
+  "tooltip_websocket": "Active un serveur WebSocket local pour les intégrations externes telles que les overlays de streaming. Désactivé par défaut.",
+  "widget_enabled": "Widget de statistiques",
+  "widget_enabled_desc": "Affiche la concentration du jour et l’activité annuelle sur le bureau.",
+  "widget_refresh_failed": "Impossible d’actualiser les statistiques.",
+  "widget_position_failed": "Impossible d’enregistrer la position.",
+  "widget_move": "Glisser pour déplacer · ajuster avec les flèches",
+  "widget_resize": "Glisser pour redimensionner · ajuster avec les flèches",
+  "widget_open_failed": "Impossible d’ouvrir le widget."
 }

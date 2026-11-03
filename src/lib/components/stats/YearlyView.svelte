@@ -3,7 +3,7 @@
   import * as m from '$paraglide/messages.js';
   import { getLocale } from '$paraglide/runtime.js';
 
-  let { heatmap }: { heatmap: HeatmapStats | null } = $props();
+  let { heatmap, compact = false }: { heatmap: HeatmapStats | null; compact?: boolean } = $props();
 
   // Heatmap grid constants
   const CELL = 11;
@@ -127,7 +127,7 @@
       cell.count === 0
         ? `${cell.date}: ${m.stats_no_sessions_today().toLowerCase()}`
         : `${cell.date}: ${cell.count} ${cell.count === 1 ? m.stats_rounds().toLowerCase().replace(/s$/, '') : m.stats_rounds().toLowerCase()}`;
-    tooltip = { x: cellRect.left + CELL / 2, y: cellRect.top - 8, text };
+    tooltip = { x: cellRect.left + cellRect.width / 2, y: cellRect.top - 8, text };
   }
 
   const { grid, months, weekCount } = $derived.by(() => {
@@ -156,7 +156,7 @@
   </style>
 </svelte:head>
 
-<div class="view">
+<div class="view" class:compact>
   {#if heatmap === null}
     <div class="loading"><span>{m.stats_loading()}</span></div>
   {:else}
@@ -315,6 +315,10 @@
 </div>
 
 <style>
+  .compact .totals, .compact .empty-overlay { display: none; }
+  .compact .heatmap-section { padding: 8px 14px 12px; min-height: 0; align-items: stretch; }
+  .compact .heatmap-wrap { width: 100%; min-width: 0; min-height: 0; }
+  .compact .heatmap-svg { width: 100%; height: auto; flex: 1; min-height: 0; }
   .view {
     display: flex;
     flex-direction: column;

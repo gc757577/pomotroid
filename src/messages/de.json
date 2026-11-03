@@ -155,5 +155,12 @@
   "tooltip_dial_countdown": "Wenn aktiviert, zählt der Fortschrittsbogen auf null herunter, anstatt sich zu füllen.",
   "tooltip_auto_start_work": "Die nächste Arbeitsrunde automatisch starten, wenn eine Pause endet.",
   "tooltip_auto_start_break": "Die Pause automatisch starten, wenn eine Arbeitsrunde endet.",
-  "tooltip_websocket": "Aktiviert einen lokalen WebSocket-Server für externe Integrationen wie Stream-Overlays. Standardmäßig deaktiviert."
+  "tooltip_websocket": "Aktiviert einen lokalen WebSocket-Server für externe Integrationen wie Stream-Overlays. Standardmäßig deaktiviert.",
+  "widget_enabled": "Statistik auf dem Desktop",
+  "widget_enabled_desc": "Heutigen Fokus und Jahresaktivität auf dem Desktop anzeigen.",
+  "widget_refresh_failed": "Statistik konnte nicht aktualisiert werden.",
+  "widget_position_failed": "Widget-Position konnte nicht gespeichert werden.",
+  "widget_move": "Zum Verschieben ziehen · Pfeiltasten zum Anpassen",
+  "widget_resize": "Zum Ändern der Größe ziehen · Pfeiltasten zum Anpassen",
+  "widget_open_failed": "Desktop-Widget konnte nicht geöffnet werden."
 }

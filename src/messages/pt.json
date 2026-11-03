@@ -155,5 +155,12 @@
   "tooltip_dial_countdown": "Quando ativado, o arco de progresso faz contagem regressiva até zero em vez de se preencher.",
   "tooltip_auto_start_work": "Iniciar automaticamente a próxima rodada de trabalho quando uma pausa terminar.",
   "tooltip_auto_start_break": "Iniciar automaticamente a pausa quando uma rodada de trabalho terminar.",
-  "tooltip_websocket": "Ativa um servidor WebSocket local para integrações externas como overlays de streaming. Desativado por padrão."
+  "tooltip_websocket": "Ativa um servidor WebSocket local para integrações externas como overlays de streaming. Desativado por padrão.",
+  "widget_enabled": "Widget de estatísticas",
+  "widget_enabled_desc": "Mostra o foco de hoje e a atividade anual na área de trabalho.",
+  "widget_refresh_failed": "Não foi possível atualizar as estatísticas.",
+  "widget_position_failed": "Não foi possível guardar a posição.",
+  "widget_move": "Arraste para mover · ajuste com as setas",
+  "widget_resize": "Arraste para redimensionar · ajuste com as setas",
+  "widget_open_failed": "Não foi possível abrir o widget."
 }

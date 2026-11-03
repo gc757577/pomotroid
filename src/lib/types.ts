@@ -18,6 +18,11 @@ export interface TimerState {
 
 /** Mirrors Rust `Settings` struct returned by `settings_get`. */
 export interface Settings {
+  widget_enabled: boolean;
+  widget_x: number | null;
+  widget_y: number | null;
+  widget_width: number;
+  widget_height: number;
   timer_opacity_percent: number;
   hover_opacity_enabled: boolean;
   hover_opacity_percent: number;
