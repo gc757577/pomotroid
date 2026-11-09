@@ -199,5 +199,20 @@
   "timer_mode_horizontal": "Horizontal mini mode",
   "timer_mode_normal": "Normal mode",
   "timer_mode_failed": "Could not change display mode.",
-  "about_upstream_source": "Original Pomotroid source · MIT"
+  "about_upstream_source": "Original Pomotroid source · MIT",
+  "widget_opacity": "Widget opacity",
+  "widget_opacity_desc": "Set the opacity of the entire desktop widget, independently of the timer. Drag to preview; release to save.",
+  "widget_opacity_failed": "Could not apply or save widget opacity.",
+  "system_group_startup": "Startup",
+  "autostart_enabled": "Launch at Windows sign-in",
+  "autostart_desc": "Launch when you sign in. Manual launches always show the timer; tray startup keeps a recovery icon.",
+  "autostart_mode": "Startup mode",
+  "autostart_tray": "Start in tray",
+  "autostart_window": "Show timer window",
+  "autostart_unavailable": "Autostart is available only in the installed app. Development and uninstalled executables are not registered.",
+  "autostart_windows_disabled": "Windows has disabled autostart. Opening the app will not re-enable it; turn this switch on explicitly to register it again.",
+  "autostart_path_changed": "The registered executable differs from this app. Enable the switch to update it to the current installed path.",
+  "autostart_failed": "Could not change autostart. Check the current registration and try again.",
+  "autostart_status_failed": "Could not read the autostart registration.",
+  "autostart_rollback_failed": "Autostart change and registration rollback failed. Check Windows Settings → Apps → Startup."
 }

@@ -5,7 +5,10 @@ import { writable } from 'svelte/store';
 import type { Settings } from '$lib/types';
 
 const defaults: Settings = {
+  autostart_enabled: false,
+  autostart_start_hidden: true,
   widget_enabled: false,
+  widget_opacity_percent: 100,
   widget_x: null,
   widget_y: null,
   widget_width: 760,

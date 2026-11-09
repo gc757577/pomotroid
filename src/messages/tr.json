@@ -166,5 +166,20 @@
   "timer_mode_horizontal": "Yatay mini mod",
   "timer_mode_normal": "Normal mod",
   "timer_mode_failed": "Görünüm modu değiştirilemedi.",
-  "about_upstream_source": "Original Pomotroid source · MIT"
+  "about_upstream_source": "Original Pomotroid source · MIT",
+  "widget_opacity": "Widget opaklığı",
+  "widget_opacity_desc": "Masaüstü widget’ının tamamının opaklığını zamanlayıcıdan bağımsız ayarlayın. Önizleme için sürükleyin, kaydetmek için bırakın.",
+  "widget_opacity_failed": "Widget opaklığı uygulanamadı veya kaydedilemedi.",
+  "system_group_startup": "Başlangıç",
+  "autostart_enabled": "Windows oturumu açıldığında başlat",
+  "autostart_desc": "Oturum açıldığında başlatır. Elle başlatma zamanlayıcıyı gösterir; tepsi başlangıcı geri yükleme simgesini korur.",
+  "autostart_mode": "Başlangıç biçimi",
+  "autostart_tray": "Tepside başlat",
+  "autostart_window": "Zamanlayıcı penceresini göster",
+  "autostart_unavailable": "Otomatik başlatma yalnızca kurulu uygulamada kullanılabilir. Geliştirme ve kurulmamış yürütülebilir dosyalar kaydedilmez.",
+  "autostart_windows_disabled": "Windows otomatik başlatmayı kapattı. Uygulamayı açmak bunu yeniden etkinleştirmez; bu anahtarı açıkça açın.",
+  "autostart_path_changed": "Kayıtlı yol bu uygulamadan farklı. Geçerli kurulum yolunu kullanmak için anahtarı açın.",
+  "autostart_failed": "Otomatik başlatma değiştirilemedi. Kaydı kontrol edip yeniden deneyin.",
+  "autostart_status_failed": "Otomatik başlatma kaydı okunamadı.",
+  "autostart_rollback_failed": "Değişiklik ve geri yükleme başarısız. Windows Ayarları → Uygulamalar → Başlangıç bölümünü kontrol edin."
 }

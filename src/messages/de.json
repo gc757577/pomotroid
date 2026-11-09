@@ -166,5 +166,20 @@
   "timer_mode_horizontal": "Horizontaler Minimodus",
   "timer_mode_normal": "Standardmodus",
   "timer_mode_failed": "Anzeigemodus konnte nicht geändert werden.",
-  "about_upstream_source": "Original Pomotroid source · MIT"
+  "about_upstream_source": "Original Pomotroid source · MIT",
+  "widget_opacity": "Widget-Deckkraft",
+  "widget_opacity_desc": "Die Deckkraft des gesamten Desktop-Widgets unabhängig vom Timer einstellen. Ziehen zur Vorschau, loslassen zum Speichern.",
+  "widget_opacity_failed": "Die Widget-Deckkraft konnte nicht angewendet oder gespeichert werden.",
+  "system_group_startup": "Start",
+  "autostart_enabled": "Bei Windows-Anmeldung starten",
+  "autostart_desc": "Start bei der Anmeldung. Manuelle Starts zeigen den Timer; beim Tray-Start bleibt ein Symbol zum Wiederherstellen.",
+  "autostart_mode": "Startmodus",
+  "autostart_tray": "Im Infobereich starten",
+  "autostart_window": "Timerfenster anzeigen",
+  "autostart_unavailable": "Autostart ist nur in der installierten App verfügbar. Entwicklungs- und nicht installierte Programme werden nicht registriert.",
+  "autostart_windows_disabled": "Windows hat Autostart deaktiviert. Die App aktiviert ihn beim Öffnen nicht erneut. Schalten Sie ihn hier ausdrücklich ein.",
+  "autostart_path_changed": "Der registrierte Programmpfad weicht ab. Aktivieren Sie den Schalter, um den aktuellen Installationspfad einzutragen.",
+  "autostart_failed": "Autostart konnte nicht geändert werden. Prüfen Sie die Registrierung und versuchen Sie es erneut.",
+  "autostart_status_failed": "Die Autostart-Registrierung konnte nicht gelesen werden.",
+  "autostart_rollback_failed": "Änderung und Wiederherstellung sind fehlgeschlagen. Prüfen Sie Windows-Einstellungen → Apps → Autostart."
 }

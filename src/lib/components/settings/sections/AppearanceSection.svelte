@@ -4,7 +4,7 @@
   import type { Theme } from '$lib/types';
   import { settings } from '$lib/stores/settings';
   import { applyTheme } from '$lib/stores/theme';
-  import { getThemes, setSetting, onThemesChanged, previewTimerOpacity } from '$lib/ipc';
+  import { getThemes, setSetting, onThemesChanged, previewTimerOpacity, previewWidgetOpacity } from '$lib/ipc';
   import { isWindows } from '$lib/utils/platform';
   import SettingsToggle from '$lib/components/settings/SettingsToggle.svelte';
   import { resolveThemeName } from '$lib/utils/theme';
@@ -20,6 +20,44 @@
   let hoverOpacity = $state($settings.hover_opacity_percent);
   let adjustingHover = $state(false);
   let hoverRevision = 0;
+  let widgetOpacity = $state($settings.widget_opacity_percent);
+  let adjustingWidgetOpacity = $state(false);
+  let widgetOpacityRevision = 0;
+  let widgetOpacityError = $state('');
+  $effect(() => {
+    const saved = $settings.widget_opacity_percent;
+    if (!adjustingWidgetOpacity) widgetOpacity = saved;
+  });
+  function queueWidgetOpacity(action: () => Promise<void>) {
+    widgetQueue = widgetQueue.then(action).catch(error => {
+      console.error('[widget-opacity]', error);
+      widgetOpacityError = m.widget_opacity_failed();
+      adjustingWidgetOpacity = false;
+      widgetOpacity = get(settings).widget_opacity_percent;
+    });
+  }
+  function previewWidget(event: Event) {
+    widgetOpacity = (event.currentTarget as HTMLInputElement).valueAsNumber;
+    adjustingWidgetOpacity = true;
+    widgetOpacityError = '';
+    widgetOpacityRevision += 1;
+    const value = widgetOpacity;
+    queueWidgetOpacity(() => previewWidgetOpacity(value));
+  }
+  function commitWidgetOpacity() {
+    const value = widgetOpacity;
+    const revision = widgetOpacityRevision;
+    queueWidgetOpacity(async () => {
+      settings.set(await setSetting('widget_opacity_percent', String(value)));
+      if (revision === widgetOpacityRevision) adjustingWidgetOpacity = false;
+    });
+  }
+  function restoreWidgetOpacity() {
+    widgetOpacityRevision += 1;
+    widgetOpacity = get(settings).widget_opacity_percent;
+    adjustingWidgetOpacity = false;
+    queueWidgetOpacity(() => previewWidgetOpacity(get(settings).widget_opacity_percent));
+  }
   let widgetError = $state('');
   let widgetQueue = Promise.resolve();
   function toggleWidget() {
@@ -88,16 +126,19 @@
     opacity = get(settings).timer_opacity_percent;
     adjustingOpacity = false;
     queueOpacity(async () => {
-      await previewTimerOpacity(get(settings).timer_opacity_percent);
+      await previewTimerOpacity(get(settings).timer_opacity_percent, false);
       adjustingOpacity = false;
     });
   }
 
   onDestroy(() => {
     if (isWindows) {
+      void widgetQueue
+        .then(() => previewWidgetOpacity(get(settings).widget_opacity_percent))
+        .catch(() => {});
       // Runs after queued commits, including a release just before closing.
       void opacityQueue
-        .then(() => previewTimerOpacity(get(settings).timer_opacity_percent))
+        .then(() => previewTimerOpacity(get(settings).timer_opacity_percent, false))
         .catch(() => {});
     }
   });
@@ -173,6 +214,34 @@
   {#if isWindows}
     <SettingsToggle label={m.widget_enabled()} description={m.widget_enabled_desc()} checked={$settings.widget_enabled} onclick={toggleWidget} />
     {#if widgetError}<p class="opacity-error" role="alert">{widgetError}</p>{/if}
+    <div class="opacity-control">
+      <div class="opacity-heading">
+        <label for="widget-opacity">{m.widget_opacity()}</label>
+        <output for="widget-opacity">{widgetOpacity}%</output>
+      </div>
+      <input
+        id="widget-opacity"
+        type="range"
+        min="20"
+        max="100"
+        step="1"
+        value={widgetOpacity}
+        aria-describedby="widget-opacity-description"
+        aria-valuetext={`${widgetOpacity}%`}
+        oninput={previewWidget}
+        onchange={commitWidgetOpacity}
+        onpointercancel={restoreWidgetOpacity}
+        onblur={() => { if (adjustingWidgetOpacity) restoreWidgetOpacity(); }}
+        onkeydown={(event) => {
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            restoreWidgetOpacity();
+          }
+        }}
+      />
+      <p id="widget-opacity-description">{m.widget_opacity_desc()}</p>
+      {#if widgetOpacityError}<p class="opacity-error" role="alert">{widgetOpacityError}</p>{/if}
+    </div>
     <div class="opacity-control">
       <div class="opacity-heading">
         <label for="timer-opacity">{m.appearance_timer_opacity()}</label>

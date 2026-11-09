@@ -90,7 +90,8 @@
           "Korean",
           "English"
         ],
-        "startMenuFolder": "Pomotroid Fork Preview"
+        "startMenuFolder": "Pomotroid Fork Preview",
+        "installerHooks": "windows/nsis-hooks.nsh"
       },
       "wix": {
         "language": "en-US"

@@ -1,3 +1,4 @@
+pub mod startup;
 pub mod audio;
 pub mod commands;
 pub mod db;
@@ -53,7 +54,13 @@ pub fn run() {
         "Use `npm run desktop:dev` to keep development data separate from Pomotroid"
     );
 
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    #[cfg(target_os = "windows")]
+    let builder = builder
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| startup::second_instance(app, &args)))
+        .plugin(tauri_plugin_autostart::Builder::new()
+            .app_name(context.config().identifier.clone()).args([startup::LOGIN_ARG]).build());
+    builder
         .plugin(
             LogBuilder::new()
                 .targets([Target::new(TargetKind::LogDir { file_name: None })])
@@ -78,6 +85,10 @@ pub fn run() {
                     let saved = db.lock().ok()
                         .and_then(|conn| settings::load(&conn).ok());
                     if let Some(saved) = saved {
+                        #[cfg(target_os = "windows")]
+                        if let Err(error) = desktop_widget::preview_opacity(saved.widget_opacity_percent) {
+                            log::error!("[widget] restore opacity after settings close failed: {error}");
+                        }
                         if let Err(error) = window_opacity::configure(&main, &saved) {
                             log::error!("[window-opacity] restore after settings close failed: {error}");
                         }
@@ -123,6 +134,7 @@ pub fn run() {
             {
                 let conn = db.lock().unwrap();
                 settings::seed_defaults(&conn).expect("failed to seed default settings");
+                startup::reconcile(app.handle(), &conn);
                 settings::save_setting(&conn, "check_for_updates", "false")
                     .expect("failed to disable fork updates");
             }
@@ -137,6 +149,8 @@ pub fn run() {
                 let conn = db.lock().unwrap();
                 settings::load(&conn).expect("failed to load settings")
             };
+
+            startup::initialize(app.handle(), &initial_settings);
 
             // Apply the persisted log level before any further setup.
             if initial_settings.verbose_logging {
@@ -184,7 +198,7 @@ pub fn run() {
             // StatusNotifierWatcher D-Bus service to respond.  Spawning on a
             // background thread lets setup() return so the event loop starts
             // and the window can appear while the tray registers asynchronously.
-            if initial_settings.tray_icon_enabled || initial_settings.min_to_tray {
+            if initial_settings.tray_icon_enabled || initial_settings.min_to_tray || startup::tray_required(app.handle()) {
                 #[cfg(target_os = "linux")]
                 {
                     let app_handle = app.handle().clone();
@@ -422,6 +436,9 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            startup::startup_ready,
+            startup::autostart_status,
+            startup::autostart_set,
             // Timer
             timer_toggle,
             timer_reset,
@@ -442,6 +459,7 @@ pub fn run() {
             // Window
             window_set_visibility,
             window_preview_opacity,
+            commands::widget_preview_opacity,
             commands::widget_action,
             commands::tray_set_labels,
             commands::timer_display_mode,

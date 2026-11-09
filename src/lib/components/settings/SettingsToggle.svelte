@@ -8,12 +8,13 @@
     description?: string;
     tooltip?: string;
     onclick: () => void;
+    disabled?: boolean;
   }
 
-  let { label, checked, description, tooltip, onclick }: Props = $props();
+  let { label, checked, description, tooltip, onclick, disabled = false }: Props = $props();
 </script>
 
-<button class="row" {onclick}>
+<button class="row" {onclick} {disabled}>
   <span class="text">
     <span class="label"
       >{label}{#if tooltip}<TooltipInfo text={tooltip} />{/if}</span
@@ -26,6 +27,7 @@
 </button>
 
 <style>
+  .row:disabled { cursor: default; opacity: 0.6; }
   .row {
     display: flex;
     align-items: center;

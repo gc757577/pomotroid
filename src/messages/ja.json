@@ -166,5 +166,20 @@
   "timer_mode_horizontal": "横長ミニモード",
   "timer_mode_normal": "通常モード",
   "timer_mode_failed": "表示モードを変更できませんでした。",
-  "about_upstream_source": "Original Pomotroid source · MIT"
+  "about_upstream_source": "Original Pomotroid source · MIT",
+  "widget_opacity": "ウィジェットの不透明度",
+  "widget_opacity_desc": "デスクトップウィジェット全体の不透明度をタイマーとは別に調整します。ドラッグ中にプレビューし、操作を終えると保存します。",
+  "widget_opacity_failed": "ウィジェットの不透明度を適用または保存できませんでした。",
+  "system_group_startup": "起動",
+  "autostart_enabled": "Windowsへのログイン時に自動起動",
+  "autostart_desc": "ログイン時に起動します。手動起動ではタイマーを表示し、トレイ起動では復元用アイコンを維持します。",
+  "autostart_mode": "起動方法",
+  "autostart_tray": "トレイで起動",
+  "autostart_window": "タイマーウィンドウを表示",
+  "autostart_unavailable": "自動起動はインストール済みアプリでのみ登録できます。開発用や未インストールの実行ファイルは登録しません。",
+  "autostart_windows_disabled": "Windowsで自動起動が無効になっています。アプリを開いても再有効化しません。このスイッチを明示的にオンにすると再登録します。",
+  "autostart_path_changed": "登録されたパスが現在のアプリと異なります。スイッチをオンにすると現在のインストール先に更新します。",
+  "autostart_failed": "自動起動を変更できませんでした。登録状態を確認して再試行してください。",
+  "autostart_status_failed": "自動起動の登録状態を確認できませんでした。",
+  "autostart_rollback_failed": "変更と登録の復元に失敗しました。Windowsの設定 → アプリ → スタートアップで確認してください。"
 }

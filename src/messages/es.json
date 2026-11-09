@@ -166,5 +166,20 @@
   "timer_mode_horizontal": "Modo mini horizontal",
   "timer_mode_normal": "Modo normal",
   "timer_mode_failed": "No se pudo cambiar el modo de visualización.",
-  "about_upstream_source": "Original Pomotroid source · MIT"
+  "about_upstream_source": "Original Pomotroid source · MIT",
+  "widget_opacity": "Opacidad del widget",
+  "widget_opacity_desc": "Ajusta la opacidad de todo el widget de escritorio independientemente del temporizador. Arrastra para previsualizar y suelta para guardar.",
+  "widget_opacity_failed": "No se pudo aplicar o guardar la opacidad del widget.",
+  "system_group_startup": "Inicio",
+  "autostart_enabled": "Iniciar al entrar en Windows",
+  "autostart_desc": "Inicia al entrar. El inicio manual muestra el temporizador; el inicio en la bandeja conserva un icono para restaurarlo.",
+  "autostart_mode": "Modo de inicio",
+  "autostart_tray": "Iniciar en la bandeja",
+  "autostart_window": "Mostrar temporizador",
+  "autostart_unavailable": "El inicio automático solo está disponible en la aplicación instalada. No se registran ejecutables de desarrollo o sin instalar.",
+  "autostart_windows_disabled": "Windows ha desactivado el inicio automático. Abrir la aplicación no lo reactiva; actívalo aquí expresamente.",
+  "autostart_path_changed": "La ruta registrada es distinta. Activa el interruptor para usar la ruta de instalación actual.",
+  "autostart_failed": "No se pudo cambiar el inicio automático. Comprueba el registro y vuelve a intentarlo.",
+  "autostart_status_failed": "No se pudo consultar el registro de inicio automático.",
+  "autostart_rollback_failed": "Fallaron el cambio y la restauración. Revisa Configuración de Windows → Aplicaciones → Inicio."
 }

@@ -5,7 +5,10 @@
 /// Time values are stored in **seconds** (since MIGRATION_2).
 /// Volume is stored on a **0–100** integer scale; converted to 0.0–1.0 on load.
 pub const DEFAULTS: &[(&str, &str)] = &[
+    ("autostart_enabled", "false"),
+    ("autostart_start_hidden", "true"),
     ("widget_enabled", "false"),
+    ("widget_opacity_percent", "100"),
     ("widget_width", "760"),
     ("widget_height", "320"),
     ("timer_opacity_percent", "100"),

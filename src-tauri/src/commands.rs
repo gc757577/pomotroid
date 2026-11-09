@@ -60,8 +60,9 @@ pub fn timer_get_state(timer: State<'_, TimerController>) -> TimerSnapshot {
 
 /// Return all current settings.
 #[tauri::command]
-pub fn settings_get(db: State<'_, DbState>) -> Result<Settings, String> {
+pub fn settings_get(db: State<'_, DbState>, app: AppHandle) -> Result<Settings, String> {
     let conn = db.lock().map_err(|e| e.to_string())?;
+    crate::startup::reconcile(&app, &conn);
     settings::load(&conn).map_err(|e| {
         log::error!("[settings] failed to load settings: {e}");
         e.to_string()
@@ -82,6 +83,14 @@ pub fn settings_set(
     ws_state: State<'_, Arc<WsState>>,
     app: AppHandle,
 ) -> Result<Settings, String> {
+    if key == "autostart_enabled" { return Err("Use autostart_set to change registration".into()); }
+    if key == "autostart_start_hidden" {
+        let hidden = value.parse::<bool>().map_err(|_| "Invalid startup mode")?;
+        let conn = db.lock().map_err(|e| e.to_string())?;
+        settings::save_setting(&conn, &key, &hidden.to_string()).map_err(|e| e.to_string())?;
+        let saved = settings::load(&conn).map_err(|e| e.to_string())?;
+        drop(conn); app.emit("settings:changed", &saved).ok(); return Ok(saved);
+    }
     if key == "check_for_updates" && value != "false" {
         return Err("이 배포 후보에서는 자동 업데이트를 지원하지 않습니다.".into());
     }
@@ -101,6 +110,29 @@ pub fn settings_set(
             return Err(error.to_string());
         }
         drop(conn); app.emit("settings:changed", &candidate).ok(); return Ok(candidate);
+    }
+    if key == "widget_opacity_percent" {
+        let percent = value.parse::<u32>().map_err(|_| "불투명도는 정수여야 합니다.")?;
+        crate::window_opacity::validate(percent)?;
+        let mut conn = db.lock().map_err(|e| e.to_string())?;
+        let previous = settings::load(&conn).map_err(|e| e.to_string())?;
+        #[cfg(target_os = "windows")]
+        crate::desktop_widget::preview_opacity(percent)?;
+        let result = (|| -> Result<Settings, String> {
+            let tx = conn.transaction().map_err(|e| e.to_string())?;
+            settings::save_setting(&tx, &key, &percent.to_string()).map_err(|e| e.to_string())?;
+            let saved = settings::load(&tx).map_err(|e| e.to_string())?;
+            tx.commit().map_err(|e| e.to_string())?;
+            Ok(saved)
+        })();
+        if result.is_err() {
+            #[cfg(target_os = "windows")]
+            let _ = crate::desktop_widget::preview_opacity(previous.widget_opacity_percent);
+        }
+        let saved = result?;
+        drop(conn);
+        app.emit("settings:changed", &saved).ok();
+        return Ok(saved);
     }
     if key.starts_with("widget_") { return Err("위젯 위치는 위젯에서 변경해 주세요.".into()); }
     if matches!(key.as_str(), "timer_opacity_percent" | "hover_opacity_enabled" | "hover_opacity_percent") {
@@ -235,7 +267,7 @@ pub fn settings_set(
     // On Linux, spawn tray creation on a background thread to avoid blocking
     // the main thread on KDE Plasma 6 / Wayland (D-Bus StatusNotifier hang).
     if matches!(key.as_str(), "tray_icon_enabled" | "min_to_tray") {
-        if new_settings.tray_icon_enabled || new_settings.min_to_tray {
+        if new_settings.tray_icon_enabled || new_settings.min_to_tray || crate::startup::tray_required(&app) {
             #[cfg(target_os = "linux")]
             {
                 let app_handle = app.clone();
@@ -299,7 +331,8 @@ pub fn settings_reset_defaults(
 ) -> Result<Settings, String> {
     log::info!("[settings] reset to defaults");
     let new_settings = {
-        let conn = db.lock().map_err(|e| e.to_string())?;
+        let mut conn = db.lock().map_err(|e| e.to_string())?;
+        crate::startup::disable_for_reset(&app, &mut conn)?;
         // Delete all rows so seed_defaults can insert fresh defaults.
         conn.execute("DELETE FROM settings", [])
             .map_err(|e| e.to_string())?;
@@ -327,7 +360,7 @@ pub fn settings_reset_defaults(
 
     // After reset, defaults have tray_icon_enabled=false and min_to_tray=false,
     // so destroy any active tray icon.
-    tray::destroy_tray(&tray_state);
+    if !crate::startup::tray_required(&app) { tray::destroy_tray(&tray_state); }
 
     let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
 
@@ -716,11 +749,24 @@ pub async fn install_update() -> Result<(), String> {
     Err("이 배포 후보에서는 자동 업데이트를 지원하지 않습니다.".into())
 }
 
+#[tauri::command]
+pub fn widget_preview_opacity(percent: u32) -> Result<(), String> {
+    crate::window_opacity::validate(percent)?;
+    #[cfg(target_os = "windows")]
+    { crate::desktop_widget::preview_opacity(percent) }
+    #[cfg(not(target_os = "windows"))]
+    { Err("바탕화면 위젯은 Windows에서 사용할 수 있습니다.".into()) }
+}
+
 /// Change only the timer's native opacity; never persist a preview.
 #[tauri::command]
-pub fn window_preview_opacity(percent: u32, app: AppHandle) -> Result<(), String> {
+pub fn window_preview_opacity(percent: u32, preview: Option<bool>, app: AppHandle) -> Result<(), String> {
     let window = app.get_webview_window("main").ok_or("타이머 창을 찾을 수 없습니다.")?;
-    crate::window_opacity::apply(&window, percent)
+    crate::window_opacity::validate(percent)?;
+    #[cfg(target_os = "windows")]
+    { crate::window_opacity::preview(&window, if preview.unwrap_or(true) { Some(percent) } else { None }) }
+    #[cfg(not(target_os = "windows"))]
+    { let _ = preview; crate::window_opacity::apply(&window, percent) }
 }
 
 fn cue_to_stem(cue: &str) -> Result<&'static str, String> {

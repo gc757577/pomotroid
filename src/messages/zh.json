@@ -166,5 +166,20 @@
   "timer_mode_horizontal": "横向迷你模式",
   "timer_mode_normal": "普通模式",
   "timer_mode_failed": "无法切换显示模式。",
-  "about_upstream_source": "Original Pomotroid source · MIT"
+  "about_upstream_source": "Original Pomotroid source · MIT",
+  "widget_opacity": "小组件不透明度",
+  "widget_opacity_desc": "独立于计时器调整整个桌面小组件的不透明度。拖动时预览，松开后保存。",
+  "widget_opacity_failed": "无法应用或保存小组件不透明度。",
+  "system_group_startup": "启动",
+  "autostart_enabled": "登录 Windows 时自动启动",
+  "autostart_desc": "登录时启动。手动启动始终显示计时器；托盘启动会保留用于恢复窗口的图标。",
+  "autostart_mode": "启动方式",
+  "autostart_tray": "在托盘中启动",
+  "autostart_window": "显示计时器窗口",
+  "autostart_unavailable": "只有已安装的应用才能注册自动启动。不会注册开发或未安装的可执行文件。",
+  "autostart_windows_disabled": "Windows 已禁用自动启动。打开应用不会重新启用；请明确打开此开关以重新注册。",
+  "autostart_path_changed": "注册路径与当前应用不同。打开开关即可更新为当前安装路径。",
+  "autostart_failed": "无法更改自动启动。请检查当前注册状态后重试。",
+  "autostart_status_failed": "无法读取自动启动注册状态。",
+  "autostart_rollback_failed": "更改和注册恢复失败。请检查 Windows 设置 → 应用 → 启动。"
 }

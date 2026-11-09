@@ -43,8 +43,8 @@ export const notificationShow = (title: string, body: string) =>
 
 // --- Window commands ---
 
-export const previewTimerOpacity = (percent: number) =>
-  invoke<void>('window_preview_opacity', { percent });
+export const previewTimerOpacity = (percent: number, preview = true) =>
+  invoke<void>('window_preview_opacity', { percent, preview });
 
 export const setWindowVisibility = (visible: boolean) =>
   invoke<void>('window_set_visibility', { visible });
@@ -139,3 +139,15 @@ export const onSessionsCleared = (cb: () => void): Promise<UnlistenFn> =>
 
 export const timerDisplayMode = (toggle = false, prepared?: number) => invoke<boolean>('timer_display_mode', { toggle, prepared });
 export const prepareTimerDisplayMode = () => invoke<{ id: number; horizontal: boolean; width: number; height: number }>('timer_prepare_display_mode');
+
+export const previewWidgetOpacity = (percent: number): Promise<void> =>
+  invoke<void>('widget_preview_opacity', { percent });
+
+export interface AutostartStatus {
+  available: boolean; enabled: boolean; registered: boolean;
+  reason: string; executable: string; start_hidden: boolean;
+}
+export const getAutostartStatus = () => invoke<AutostartStatus>('autostart_status');
+export const setAutostart = (enabled: boolean, startHidden: boolean) =>
+  invoke<AutostartStatus>('autostart_set', { enabled, startHidden });
+export const startupReady = () => invoke<void>('startup_ready');

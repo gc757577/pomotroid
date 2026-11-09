@@ -12,7 +12,10 @@ use std::collections::HashMap;
 /// This struct is serialized to JSON and sent to the Svelte frontend via Tauri IPC.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Settings {
+    pub autostart_enabled: bool,
+    pub autostart_start_hidden: bool,
     pub widget_enabled: bool,
+    pub widget_opacity_percent: u32,
     pub widget_x: Option<i32>,
     pub widget_y: Option<i32>,
     pub widget_width: u32,
@@ -78,7 +81,10 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            autostart_enabled: false,
+            autostart_start_hidden: true,
             widget_enabled: false,
+            widget_opacity_percent: 100,
             widget_x: None,
             widget_y: None,
             widget_width: 760,
@@ -196,6 +202,12 @@ pub fn load(conn: &Connection) -> Result<Settings> {
     let d = Settings::default();
     Ok(Settings {
         widget_enabled: parse_bool(&map, "widget_enabled", d.widget_enabled),
+        autostart_enabled: parse_bool(&map, "autostart_enabled", d.autostart_enabled),
+        autostart_start_hidden: parse_bool(&map, "autostart_start_hidden", d.autostart_start_hidden),
+        widget_opacity_percent: {
+            let value = parse_u32(&map, "widget_opacity_percent", d.widget_opacity_percent);
+            if (20..=100).contains(&value) { value } else { d.widget_opacity_percent }
+        },
         widget_x: parse_opt_i32(&map, "widget_x"),
         widget_y: parse_opt_i32(&map, "widget_y"),
         widget_width: parse_u32(&map, "widget_width", d.widget_width).clamp(360, 2000),
@@ -330,6 +342,58 @@ fn parse_opt_u32(map: &HashMap<String, String>, key: &str) -> Option<u32> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn autostart_defaults_off_tray_mode_and_mode_survives_seeding() {
+        let conn = setup();
+        seed_defaults(&conn).unwrap();
+        let initial = load(&conn).unwrap();
+        assert!(!initial.autostart_enabled);
+        assert!(initial.autostart_start_hidden);
+        save_setting(&conn, "autostart_start_hidden", "false").unwrap();
+        seed_defaults(&conn).unwrap();
+        let saved = load(&conn).unwrap();
+        assert!(!saved.autostart_enabled);
+        assert!(!saved.autostart_start_hidden);
+        assert_eq!(saved.time_work_secs, initial.time_work_secs);
+    }
+
+    #[test]
+    fn widget_opacity_is_independent_and_survives_database_reopen() {
+        let path = std::env::temp_dir().join(format!("pomotroid-widget-opacity-{}-{}.db",
+            std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        {
+            let conn = Connection::open(&path).unwrap();
+            migrations::run(&conn).unwrap();
+            seed_defaults(&conn).unwrap();
+            assert_eq!(load(&conn).unwrap().widget_opacity_percent, 100);
+            save_setting(&conn, "timer_opacity_percent", "40").unwrap();
+            save_setting(&conn, "widget_x", "150").unwrap();
+            save_setting(&conn, "widget_width", "680").unwrap();
+            for value in ["20", "70", "100"] {
+                save_setting(&conn, "widget_opacity_percent", value).unwrap();
+                let saved = load(&conn).unwrap();
+                assert_eq!(saved.widget_opacity_percent, value.parse::<u32>().unwrap());
+                assert_eq!(saved.timer_opacity_percent, 40);
+                assert!(!saved.widget_enabled);
+                assert_eq!((saved.widget_x, saved.widget_width), (Some(150), 680));
+            }
+            for invalid in ["0", "19", "101", "-1", "NaN"] {
+                save_setting(&conn, "widget_opacity_percent", invalid).unwrap();
+                assert_eq!(load(&conn).unwrap().widget_opacity_percent, 100);
+            }
+            save_setting(&conn, "widget_opacity_percent", "70").unwrap();
+        }
+        {
+            let conn = Connection::open(&path).unwrap();
+            seed_defaults(&conn).unwrap();
+            for enabled in ["true", "false", "true"] {
+                save_setting(&conn, "widget_enabled", enabled).unwrap();
+                assert_eq!(load(&conn).unwrap().widget_opacity_percent, 70);
+            }
+        }
+        std::fs::remove_file(path).unwrap();
+    }
+
     #[test]
     fn legacy_update_setting_cannot_enable_fork_updates() {
         let conn = setup();

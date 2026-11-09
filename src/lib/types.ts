@@ -18,7 +18,10 @@ export interface TimerState {
 
 /** Mirrors Rust `Settings` struct returned by `settings_get`. */
 export interface Settings {
+  autostart_enabled: boolean;
+  autostart_start_hidden: boolean;
   widget_enabled: boolean;
+  widget_opacity_percent: number;
   widget_x: number | null;
   widget_y: number | null;
   widget_width: number;

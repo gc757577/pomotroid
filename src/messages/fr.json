@@ -166,5 +166,20 @@
   "timer_mode_horizontal": "Mode mini horizontal",
   "timer_mode_normal": "Mode normal",
   "timer_mode_failed": "Impossible de changer le mode d’affichage.",
-  "about_upstream_source": "Original Pomotroid source · MIT"
+  "about_upstream_source": "Original Pomotroid source · MIT",
+  "widget_opacity": "Opacité du widget",
+  "widget_opacity_desc": "Réglez l’opacité de tout le widget de bureau indépendamment du minuteur. Faites glisser pour prévisualiser, relâchez pour enregistrer.",
+  "widget_opacity_failed": "Impossible d’appliquer ou d’enregistrer l’opacité du widget.",
+  "system_group_startup": "Démarrage",
+  "autostart_enabled": "Lancer à la connexion Windows",
+  "autostart_desc": "Lance à la connexion. Un lancement manuel affiche le minuteur ; le démarrage dans la zone de notification garde une icône de restauration.",
+  "autostart_mode": "Mode de démarrage",
+  "autostart_tray": "Dans la zone de notification",
+  "autostart_window": "Afficher le minuteur",
+  "autostart_unavailable": "Le démarrage automatique est réservé à l’application installée. Les exécutables de développement ou non installés ne sont pas enregistrés.",
+  "autostart_windows_disabled": "Windows a désactivé le démarrage automatique. Ouvrir l’application ne le réactive pas ; activez-le ici explicitement.",
+  "autostart_path_changed": "Le chemin enregistré est différent. Activez le commutateur pour utiliser le chemin installé actuel.",
+  "autostart_failed": "Impossible de modifier le démarrage automatique. Vérifiez l’enregistrement puis réessayez.",
+  "autostart_status_failed": "Impossible de lire l’enregistrement du démarrage automatique.",
+  "autostart_rollback_failed": "La modification et la restauration ont échoué. Vérifiez Paramètres Windows → Applications → Démarrage."
 }

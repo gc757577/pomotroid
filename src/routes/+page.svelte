@@ -1,5 +1,6 @@
 <script lang="ts">
   import '../app.css';
+  import { startupReady } from '$lib/ipc';
   import { onMount, tick } from 'svelte';
   import Titlebar from '$lib/components/Titlebar.svelte';
   import Timer from '$lib/components/Timer.svelte';
@@ -108,7 +109,7 @@
         const osDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         const active = themes.find((t) => t.name === resolveThemeName(s, osDark)) ?? themes[0];
         if (active) applyTheme(active);
-        await getCurrentWebviewWindow().show();
+        await startupReady();
         await info(`[main] initialized, theme=${active?.name ?? 'none'}`);
       } catch (e) {
         await logError(`[main] initialization failed: ${e}`);

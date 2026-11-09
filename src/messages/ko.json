@@ -199,5 +199,20 @@
   "timer_mode_horizontal": "가로 미니 모드",
   "timer_mode_normal": "기본 모드",
   "timer_mode_failed": "표시 모드를 변경하지 못했습니다.",
-  "about_upstream_source": "원본 Pomotroid 소스 코드 · MIT"
+  "about_upstream_source": "원본 Pomotroid 소스 코드 · MIT",
+  "widget_opacity": "위젯 불투명도",
+  "widget_opacity_desc": "바탕화면 위젯 전체의 불투명도를 타이머와 별도로 조절합니다. 이동 중 미리 보고, 조작을 마치면 저장합니다.",
+  "widget_opacity_failed": "위젯 불투명도를 적용하거나 저장하지 못했습니다.",
+  "system_group_startup": "시작",
+  "autostart_enabled": "Windows 로그인 시 자동 실행",
+  "autostart_desc": "로그인할 때 실행합니다. 직접 실행하면 항상 타이머를 표시하며, 트레이 시작 시 복원용 아이콘을 유지합니다.",
+  "autostart_mode": "시작 방식",
+  "autostart_tray": "트레이에서 시작",
+  "autostart_window": "타이머 창 표시",
+  "autostart_unavailable": "설치된 앱에서만 자동 실행을 등록할 수 있습니다. 개발 앱과 설치되지 않은 실행 파일은 등록하지 않습니다.",
+  "autostart_windows_disabled": "Windows에서 자동 실행이 꺼져 있습니다. 앱을 실행해도 다시 켜지지 않으며, 이 스위치를 직접 켜면 재등록합니다.",
+  "autostart_path_changed": "등록된 실행 경로가 현재 앱과 다릅니다. 스위치를 켜면 현재 설치 경로로 갱신합니다.",
+  "autostart_failed": "자동 실행 설정을 변경하지 못했습니다. 현재 등록 상태를 확인한 뒤 다시 시도해 주세요.",
+  "autostart_status_failed": "자동 실행 등록 상태를 확인하지 못했습니다.",
+  "autostart_rollback_failed": "자동 실행 변경과 이전 등록 복구에 실패했습니다. Windows 설정 → 앱 → 시작 프로그램에서 상태를 확인해 주세요."
 }

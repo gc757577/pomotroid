@@ -35,6 +35,7 @@ struct Widget {
     view: Option<Webview>,
     surface: isize,
     enabled: bool,
+    opacity_percent: u32,
     creating: bool,
     ready: bool,
     bound: bool,
@@ -91,6 +92,17 @@ unsafe fn fit(g: Geometry) -> Geometry {
     }
 }
 impl Widget {
+    fn set_opacity(&mut self, percent: u32) -> Result<(), String> {
+        crate::window_opacity::validate(percent)?;
+        unsafe {
+            if IsWindow(self.surface as HWND) != 0 {
+                crate::window_opacity::apply_native(self.surface as HWND, percent)?;
+            }
+        }
+        self.opacity_percent = percent;
+        Ok(())
+    }
+
     fn counts(&self, reason: &str) {
         let owners = self
             .app
@@ -234,6 +246,7 @@ impl Widget {
                 "바탕화면에 위젯을 연결하지 못했습니다. 일반 창으로 복구했습니다.",
             );
         }
+        crate::window_opacity::apply_native(surface, self.opacity_percent)?;
         ShowWindow(surface, SW_SHOWNOACTIVATE);
         self.resize_view();
         self.counts(if self.attached {
@@ -279,9 +292,7 @@ impl Widget {
             return Err(format!("위젯 표면 생성: {}", GetLastError()));
         }
         self.surface = surface as isize;
-        if SetLayeredWindowAttributes(surface, 0, 255, LWA_ALPHA) == 0 {
-            return Err(format!("위젯 표면: {}", GetLastError()));
-        }
+        crate::window_opacity::apply_native(surface, self.opacity_percent)?;
         SetWindowSubclass(surface, Some(surface_proc), ID, 0);
         self.creating = true;
         self.generation += 1;
@@ -452,6 +463,7 @@ pub fn start(
                 view: None,
                 surface: 0,
                 enabled: false,
+                opacity_percent: 100,
                 creating: false,
                 ready: false,
                 bound: false,
@@ -469,6 +481,12 @@ pub fn start(
         configure(settings)
     }
 }
+/// Preview/cache only: no geometry, timer, statistics or database writes.
+pub fn preview_opacity(percent: u32) -> Result<(), String> {
+    crate::window_opacity::validate(percent)?;
+    with_widget(|w| w.set_opacity(percent))
+}
+
 pub fn configure(s: &crate::settings::Settings) -> Result<(), String> {
     with_widget(|w| unsafe {
         w.geometry = Geometry {
@@ -477,6 +495,7 @@ pub fn configure(s: &crate::settings::Settings) -> Result<(), String> {
             width: s.widget_width,
             height: s.widget_height,
         };
+        w.set_opacity(s.widget_opacity_percent)?;
         w.enabled = s.widget_enabled;
         if w.enabled {
             SetTimer(w.main as HWND, ID, 1000, None);

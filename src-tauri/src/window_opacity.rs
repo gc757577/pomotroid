@@ -1,4 +1,4 @@
-//! Native whole-window opacity. Only the timer window may be changed.
+//! Native whole-window opacity. Timer hover policy is separate from the shared HWND applicator.
 
 #[cfg(any(target_os = "windows", test))]
 #[derive(Clone)]
@@ -7,8 +7,25 @@ struct OpacityState {
     hover_enabled: bool,
     hover: u32,
     applied: Option<u32>,
+    target: Option<u32>,
+    preview: Option<u32>,
+    animation: Option<OpacityTransition>,
+    motion_enabled: bool,
+    hover_timer: bool,
+    frame_timer: bool,
     applying: bool,
 }
+
+#[cfg(any(target_os = "windows", test))]
+#[derive(Clone)]
+struct OpacityTransition {
+    from: u32,
+    to: u32,
+    started: std::time::Instant,
+}
+
+#[cfg(any(target_os = "windows", test))]
+const TRANSITION_DURATION: std::time::Duration = std::time::Duration::from_millis(180);
 
 #[cfg(any(target_os = "windows", test))]
 impl OpacityState {
@@ -18,15 +35,50 @@ impl OpacityState {
             hover_enabled: settings.hover_opacity_enabled,
             hover: settings.hover_opacity_percent,
             applied: None,
+            target: None,
+            preview: None,
+            animation: None,
+            motion_enabled: false,
+            hover_timer: false,
+            frame_timer: false,
             applying: false,
         }
     }
 
-    fn transition(&mut self, over_timer: bool) -> Option<u32> {
-        let percent = if self.hover_enabled && over_timer { self.hover } else { self.normal };
+    fn update_preferences(&mut self, settings: &crate::settings::Settings) {
+        self.normal = settings.timer_opacity_percent;
+        self.hover_enabled = settings.hover_opacity_enabled;
+        self.hover = settings.hover_opacity_percent;
+        self.preview = None;
+    }
+
+    fn frame(&mut self, over_timer: bool, animate: bool, now: std::time::Instant) -> Option<u32> {
+        let target = self.preview.unwrap_or(if self.hover_enabled && over_timer { self.hover } else { self.normal });
+        let animate = animate && self.hover_enabled && self.preview.is_none() && self.normal != self.hover;
+        if self.target != Some(target) {
+            // Start from the last value actually presented, never an old target
+            // or a time sample that has not been written to the native window.
+            self.animation = self.applied.filter(|from| animate && *from != target)
+                .map(|from| OpacityTransition { from, to: target, started: now });
+            self.target = Some(target);
+        }
+        if !animate { self.animation = None; }
+        let percent = if let Some(animation) = &self.animation {
+            let t = (now.saturating_duration_since(animation.started).as_secs_f64()
+                / TRANSITION_DURATION.as_secs_f64()).clamp(0.0, 1.0);
+            let eased = 1.0 - (1.0 - t).powi(3);
+            let value = (animation.from as f64 + (animation.to as f64 - animation.from as f64) * eased).round() as u32;
+            if t >= 1.0 { self.animation = None; }
+            value
+        } else { target };
         if self.applied == Some(percent) { return None; }
         self.applied = Some(percent);
         Some(percent)
+    }
+
+    #[cfg(test)]
+    fn transition(&mut self, over_timer: bool) -> Option<u32> {
+        self.frame(over_timer, false, std::time::Instant::now())
     }
 }
 
@@ -45,6 +97,15 @@ thread_local! {
 const OPACITY_SUBCLASS: usize = 0x504f4d4f;
 #[cfg(target_os = "windows")]
 const HOVER_TIMER: usize = 0x504f4d48;
+#[cfg(target_os = "windows")]
+const FRAME_TIMER: usize = 0x504f4d41;
+
+#[cfg(target_os = "windows")]
+unsafe fn motion_enabled() -> bool {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{SystemParametersInfoW, SPI_GETCLIENTAREAANIMATION};
+    let mut enabled: i32 = 0;
+    SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, (&mut enabled as *mut i32).cast(), 0) != 0 && enabled != 0
+}
 
 /// Install on the owning UI thread before showing the timer.
 pub fn install(window: &tauri::WebviewWindow) -> Result<(), String> {
@@ -67,6 +128,8 @@ unsafe fn install_native(hwnd: windows_sys::Win32::Foundation::HWND) -> Result<(
     let state = std::sync::Arc::new(std::sync::Mutex::new(
         OpacityState::from_settings(&crate::settings::Settings::default())
     ));
+    let enabled = motion_enabled();
+    state.lock().map_err(|e| e.to_string())?.motion_enabled = enabled;
     OPACITY_STATES.with(|states| states.borrow_mut().insert(hwnd as isize, state));
     if SetWindowSubclass(hwnd, Some(preserve_layered_style), OPACITY_SUBCLASS, 0) == 0 {
         OPACITY_STATES.with(|states| states.borrow_mut().remove(&(hwnd as isize)));
@@ -88,13 +151,14 @@ unsafe extern "system" fn preserve_layered_style(
         Shell::{DefSubclassProc, RemoveWindowSubclass},
         WindowsAndMessaging::{GWL_EXSTYLE, STYLESTRUCT, WM_NCDESTROY, WM_STYLECHANGING, WS_EX_LAYERED,
             KillTimer, WM_TIMER, WM_SIZE, WM_SHOWWINDOW, WM_WINDOWPOSCHANGED, WM_EXITSIZEMOVE,
-            WM_ACTIVATE, WM_SETFOCUS},
+            WM_ACTIVATE, WM_SETFOCUS, WM_SETTINGCHANGE},
     };
     // Hold a local reference across DefSubclassProc, which can reenter and
     // destroy the window. No state lock is held across any Windows calls.
     let state = native_state(hwnd).ok();
     if message == WM_NCDESTROY {
         KillTimer(hwnd, HOVER_TIMER);
+        KillTimer(hwnd, FRAME_TIMER);
         RemoveWindowSubclass(hwnd, Some(preserve_layered_style), subclass);
         let _ = OPACITY_STATES.try_with(|states| states.borrow_mut().remove(&(hwnd as isize)));
         return DefSubclassProc(hwnd, message, wparam, lparam);
@@ -106,8 +170,14 @@ unsafe extern "system" fn preserve_layered_style(
         // layered bit and leave its other style decisions intact.
         (*(lparam as *mut STYLESTRUCT)).styleNew |= WS_EX_LAYERED;
     }
-    if (message == WM_TIMER && wparam == HOVER_TIMER)
-        || matches!(message, WM_SIZE | WM_SHOWWINDOW | WM_WINDOWPOSCHANGED | WM_EXITSIZEMOVE | WM_ACTIVATE | WM_SETFOCUS)
+    if message == WM_SETTINGCHANGE {
+        let enabled = motion_enabled();
+        if let Some(state) = &state {
+            if let Ok(mut cached) = state.lock() { cached.motion_enabled = enabled; }
+        }
+    }
+    if (message == WM_TIMER && (wparam == HOVER_TIMER || wparam == FRAME_TIMER))
+        || matches!(message, WM_SIZE | WM_SHOWWINDOW | WM_WINDOWPOSCHANGED | WM_EXITSIZEMOVE | WM_ACTIVATE | WM_SETFOCUS | WM_SETTINGCHANGE)
     {
         // A reentrant destroy can have detached the subclass while forwarding.
         if let (Some(state), Ok(current)) = (state, native_state(hwnd)) {
@@ -147,11 +217,14 @@ unsafe fn cursor_over_timer(hwnd: windows_sys::Win32::Foundation::HWND) -> bool 
 
 #[cfg(target_os = "windows")]
 unsafe fn refresh_native(hwnd: windows_sys::Win32::Foundation::HWND, state: &NativeState) -> Result<(), String> {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{IsWindowVisible, IsIconic};
+    let visible = IsWindowVisible(hwnd) != 0 && IsIconic(hwnd) == 0;
     let over = cursor_over_timer(hwnd);
     let percent = {
         let mut cached = state.lock().map_err(|e| e.to_string())?;
         if cached.applying { return Ok(()); }
-        let percent = cached.transition(over);
+        let animate = visible && cached.motion_enabled;
+        let percent = cached.frame(over, animate, std::time::Instant::now());
         cached.applying = percent.is_some();
         percent
     };
@@ -159,13 +232,43 @@ unsafe fn refresh_native(hwnd: windows_sys::Win32::Foundation::HWND, state: &Nat
         let result = apply_native(hwnd, percent);
         let mut cached = state.lock().map_err(|e| e.to_string())?;
         cached.applying = false;
-        if result.is_err() { cached.applied = None; }
+        if result.is_err() {
+            cached.applied = None;
+            cached.target = None;
+            cached.animation = None;
+        }
+        drop(cached);
+        sync_timers(hwnd, state, visible)?;
         result?;
+    } else {
+        sync_timers(hwnd, state, visible)?;
     }
     Ok(())
 }
 
-/// Update cached preferences and immediately resolve the effective opacity.
+#[cfg(target_os = "windows")]
+unsafe fn sync_timers(hwnd: windows_sys::Win32::Foundation::HWND, state: &NativeState, visible: bool) -> Result<(), String> {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{SetTimer, KillTimer};
+    let changes = {
+        let cached = state.lock().map_err(|e| e.to_string())?;
+        let hover = visible && cached.hover_enabled && cached.preview.is_none() && cached.normal != cached.hover;
+        let frame = visible && cached.animation.is_some();
+        [(HOVER_TIMER, 50, cached.hover_timer, hover), (FRAME_TIMER, 16, cached.frame_timer, frame)]
+    };
+    for (id, interval, was_running, should_run) in changes {
+        if was_running == should_run { continue; }
+        if should_run {
+            if SetTimer(hwnd, id, interval, None) == 0 {
+                return Err("불투명도 타이머를 시작할 수 없습니다.".into());
+            }
+        } else { KillTimer(hwnd, id); }
+        let mut cached = state.lock().map_err(|e| e.to_string())?;
+        if id == HOVER_TIMER { cached.hover_timer = should_run; } else { cached.frame_timer = should_run; }
+    }
+    Ok(())
+}
+
+/// Update cached preferences and retarget from the displayed opacity.
 /// Called on the UI thread; hover transitions never access settings storage.
 pub fn configure(window: &tauri::WebviewWindow, settings: &crate::settings::Settings) -> Result<(), String> {
     validate(settings.timer_opacity_percent)?;
@@ -173,15 +276,14 @@ pub fn configure(window: &tauri::WebviewWindow, settings: &crate::settings::Sett
     if window.label() != "main" { return Err("불투명도는 타이머 창에만 적용할 수 있습니다.".into()); }
     #[cfg(target_os = "windows")]
     unsafe {
-        use windows_sys::Win32::UI::WindowsAndMessaging::{SetTimer, KillTimer};
         let hwnd = window.hwnd().map_err(|e| e.to_string())?.0;
         let state = native_state(hwnd)?;
-        if settings.hover_opacity_enabled {
-            if SetTimer(hwnd, HOVER_TIMER, 50, None) == 0 { return Err("호버 감지를 시작할 수 없습니다.".into()); }
-        } else {
-            KillTimer(hwnd, HOVER_TIMER);
+        let enabled = motion_enabled();
+        {
+            let mut cached = state.lock().map_err(|e| e.to_string())?;
+            cached.update_preferences(settings);
+            cached.motion_enabled = enabled;
         }
-        *state.lock().map_err(|e| e.to_string())? = OpacityState::from_settings(settings);
         refresh_native(hwnd, &state)?;
     }
     #[cfg(not(target_os = "windows"))]
@@ -198,22 +300,28 @@ pub fn validate(percent: u32) -> Result<u8, String> {
 
 #[cfg(target_os = "windows")]
 pub fn apply(window: &tauri::WebviewWindow, percent: u32) -> Result<(), String> {
-    validate(percent)?;
+    preview(window, Some(percent))
+}
+
+/// Preview is explicit and takes precedence over hover, without altering either
+/// stored preference. None releases the preview and resumes the hover policy.
+#[cfg(target_os = "windows")]
+pub fn preview(window: &tauri::WebviewWindow, percent: Option<u32>) -> Result<(), String> {
+    if let Some(percent) = percent { validate(percent)?; }
     if window.label() != "main" { return Err("불투명도는 타이머 창에만 적용할 수 있습니다.".into()); }
     let hwnd = window.hwnd().map_err(|e| e.to_string())?.0;
     unsafe {
         let state = native_state(hwnd)?;
         {
             let mut cached = state.lock().map_err(|e| e.to_string())?;
-            cached.normal = percent;
-            cached.applied = None;
+            cached.preview = percent;
         }
         refresh_native(hwnd, &state)
     }
 }
 
 #[cfg(target_os = "windows")]
-unsafe fn apply_native(hwnd: windows_sys::Win32::Foundation::HWND, percent: u32) -> Result<(), String> {
+pub(crate) unsafe fn apply_native(hwnd: windows_sys::Win32::Foundation::HWND, percent: u32) -> Result<(), String> {
     use windows_sys::Win32::{
         Foundation::{GetLastError, SetLastError},
         UI::WindowsAndMessaging::{
@@ -223,7 +331,7 @@ unsafe fn apply_native(hwnd: windows_sys::Win32::Foundation::HWND, percent: u32)
     };
 
     let alpha = validate(percent)?;
-    // SAFETY: Tauri owns this live HWND. Preserve every existing extended
+    // SAFETY: The caller owns this live HWND. Preserve every existing extended
     // style bit; no click-through or topmost flags are changed.
     unsafe {
         SetLastError(0);
@@ -255,7 +363,7 @@ unsafe fn apply_native(hwnd: windows_sys::Win32::Foundation::HWND, percent: u32)
             {
                 return Err("창 불투명도 적용 결과를 확인할 수 없습니다.".into());
             }
-            log::debug!("[window-opacity] main percent={percent} alpha={observed}");
+            log::debug!("[window-opacity] hwnd={hwnd:p} percent={percent} alpha={observed}");
         }
     }
     Ok(())
@@ -264,6 +372,219 @@ unsafe fn apply_native(hwnd: windows_sys::Win32::Foundation::HWND, percent: u32)
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn hover_state(normal: u32, hover: u32) -> OpacityState {
+        OpacityState::from_settings(&crate::settings::Settings {
+            timer_opacity_percent: normal, hover_opacity_percent: hover,
+            hover_opacity_enabled: true, ..Default::default()
+        })
+    }
+
+    #[test]
+    fn animated_hover_moves_both_directions_and_finishes_at_180ms() {
+        for (normal, hover) in [(70, 100), (100, 70), (100, 20), (20, 100)] {
+            let mut state = hover_state(normal, hover);
+            let start = std::time::Instant::now();
+            assert_eq!(state.frame(false, true, start), Some(normal));
+            assert_eq!(state.frame(true, true, start), None);
+            let mut previous = normal;
+            for ms in (15..180).step_by(15) {
+                state.frame(true, true, start + std::time::Duration::from_millis(ms));
+                let current = state.applied.unwrap();
+                assert!((normal.min(hover)..=normal.max(hover)).contains(&current));
+                assert!(if normal < hover { current >= previous } else { current <= previous });
+                previous = current;
+                assert!(state.animation.is_some());
+            }
+            state.frame(true, true, start + TRANSITION_DURATION);
+            assert_eq!(state.applied, Some(hover));
+            assert!(state.animation.is_none());
+            for ms in 181..400 { assert_eq!(state.frame(true, true, start + std::time::Duration::from_millis(ms)), None); }
+        }
+        let mut state = hover_state(20, 100);
+        let start = std::time::Instant::now();
+        state.frame(false, true, start); state.frame(true, true, start);
+        state.frame(true, true, start + std::time::Duration::from_millis(90));
+        assert_eq!(state.applied, Some(90), "cubic ease-out covers 87.5% at half time");
+    }
+
+    #[test]
+    fn rapid_reversal_starts_at_the_presented_value_and_never_restarts_same_target() {
+        let mut state = hover_state(100, 20);
+        let start = std::time::Instant::now();
+        state.frame(false, true, start);
+        let mut over = true;
+        for ms in (0..600).step_by(30) {
+            let now = start + std::time::Duration::from_millis(ms);
+            let presented = state.applied;
+            assert_eq!(state.frame(over, true, now), None, "retarget must not jump");
+            assert_eq!(state.applied, presented);
+            assert_eq!(state.animation.as_ref().unwrap().from, presented.unwrap());
+            state.frame(over, true, now + std::time::Duration::from_millis(15));
+            let began = state.animation.as_ref().unwrap().started;
+            state.frame(over, true, now + std::time::Duration::from_millis(20));
+            assert_eq!(state.animation.as_ref().unwrap().started, began, "child/button events must not restart a transition");
+            over = !over;
+        }
+        state.frame(!over, true, start + std::time::Duration::from_millis(800));
+        assert_eq!(state.applied, state.target);
+        assert!(state.animation.is_none());
+    }
+
+    #[test]
+    fn disabling_equal_values_hidden_and_reduced_motion_cancel_animation() {
+        let start = std::time::Instant::now();
+        for reason in ["disabled", "equal", "hidden-or-reduced-motion"] {
+            let mut state = hover_state(70, 100);
+            state.frame(false, true, start); state.frame(true, true, start);
+            state.frame(true, true, start + std::time::Duration::from_millis(45));
+            assert!(state.animation.is_some());
+            match reason {
+                "disabled" => state.hover_enabled = false,
+                "equal" => state.hover = 70,
+                _ => {}
+            }
+            let animate = reason != "hidden-or-reduced-motion";
+            state.frame(animate, animate, start + std::time::Duration::from_millis(50));
+            assert_eq!(state.applied, Some(70));
+            assert!(state.animation.is_none());
+            assert_eq!(state.frame(false, animate, start + TRANSITION_DURATION), None);
+        }
+        let mut state = hover_state(70, 100);
+        state.frame(false, true, start);
+        assert_eq!(state.frame(true, false, start), Some(100), "reduced motion snaps to the hover target");
+        assert!(state.animation.is_none());
+    }
+
+    #[test]
+    fn preview_has_priority_and_preference_edits_retarget_without_resetting_display() {
+        let mut state = hover_state(70, 100);
+        let start = std::time::Instant::now();
+        state.frame(false, true, start); state.frame(true, true, start);
+        state.frame(true, true, start + std::time::Duration::from_millis(45));
+        state.preview = Some(40);
+        state.frame(true, true, start + std::time::Duration::from_millis(50));
+        assert_eq!(state.applied, Some(40));
+        assert!(state.animation.is_none());
+        for over in [false, true, false] {
+            assert_eq!(state.frame(over, true, start + std::time::Duration::from_millis(60)), None);
+        }
+        assert_eq!((state.normal, state.hover), (70, 100));
+        state.preview = None;
+        state.frame(true, true, start + std::time::Duration::from_millis(70));
+        assert_eq!(state.applied, Some(40));
+        state.frame(true, true, start + std::time::Duration::from_millis(100));
+        let displayed = state.applied;
+        let mut settings = crate::settings::Settings {
+            timer_opacity_percent: 80, hover_opacity_enabled: true, hover_opacity_percent: 20,
+            ..Default::default()
+        };
+        state.update_preferences(&settings);
+        state.frame(true, true, start + std::time::Duration::from_millis(110));
+        assert_eq!(state.applied, displayed);
+        assert_eq!(state.animation.as_ref().unwrap().from, displayed.unwrap());
+        state.frame(true, true, start + std::time::Duration::from_millis(290));
+        assert_eq!(state.applied, Some(20));
+        settings.hover_opacity_enabled = false;
+        state.update_preferences(&settings);
+        assert_eq!(state.frame(true, true, start + std::time::Duration::from_millis(300)), Some(80));
+        assert!(state.animation.is_none());
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn native_frames_keep_geometry_and_stop_frame_timer_when_idle() {
+        use windows_sys::Win32::{Foundation::RECT, UI::WindowsAndMessaging::*};
+        unsafe {
+            let class: Vec<u16> = "STATIC\0".encode_utf16().collect();
+            let hwnd = CreateWindowExW(0, class.as_ptr(), std::ptr::null(), WS_POPUP,
+                0, 0, 200, 88, std::ptr::null_mut(), std::ptr::null_mut(), std::ptr::null_mut(), std::ptr::null());
+            assert!(!hwnd.is_null());
+            install_native(hwnd).unwrap();
+            let state = native_state(hwnd).unwrap();
+            *state.lock().unwrap() = hover_state(100, 20);
+            let start = std::time::Instant::now();
+            let mut before = RECT::default(); GetWindowRect(hwnd, &mut before);
+            // Simulated timestamps, real HWND alpha writes and timer ownership.
+            for ms in (0..=180).step_by(15) {
+                let percent = {
+                    let mut cached = state.lock().unwrap();
+                    if ms == 0 { cached.frame(false, true, start); }
+                    cached.frame(true, true, start + std::time::Duration::from_millis(ms));
+                    cached.applied.unwrap()
+                };
+                apply_native(hwnd, percent).unwrap();
+                sync_timers(hwnd, &state, true).unwrap();
+                let cached = state.lock().unwrap();
+                assert_eq!(cached.frame_timer, ms < 180);
+                assert!(cached.hover_timer);
+                let mut alpha = 0;
+                assert_ne!(GetLayeredWindowAttributes(hwnd, std::ptr::null_mut(), &mut alpha, std::ptr::null_mut()), 0);
+                assert_eq!(alpha, validate(percent).unwrap());
+            }
+            {
+                let mut cached = state.lock().unwrap();
+                assert_eq!(cached.frame(true, true, start + std::time::Duration::from_secs(1)), None);
+                assert!(cached.animation.is_none());
+                cached.hover = cached.normal;
+                cached.frame(true, true, start + std::time::Duration::from_secs(1));
+            }
+            sync_timers(hwnd, &state, true).unwrap();
+            assert!(!state.lock().unwrap().hover_timer, "equal values need no hover polling");
+            assert!(!state.lock().unwrap().frame_timer);
+            let mut after = RECT::default(); GetWindowRect(hwnd, &mut after);
+            assert_eq!((before.left, before.top, before.right, before.bottom),
+                (after.left, after.top, after.right, after.bottom));
+            DestroyWindow(hwnd);
+            assert!(native_state(hwnd).is_err());
+        }
+    }
+
+    // Hidden, app-owned native windows only: this checks HWND attributes, not
+    // desktop/WebView visual composition or interaction with the user's UI.
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn native_child_opacity_preserves_parent_geometry_and_other_window_alpha() {
+        use windows_sys::Win32::{Foundation::RECT, UI::WindowsAndMessaging::*};
+        unsafe {
+            let class: Vec<u16> = "STATIC\0".encode_utf16().collect();
+            let parent = CreateWindowExW(0, class.as_ptr(), std::ptr::null(), WS_POPUP,
+                0, 0, 400, 300, std::ptr::null_mut(), std::ptr::null_mut(), std::ptr::null_mut(), std::ptr::null());
+            assert!(!parent.is_null());
+            let child = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_LAYERED, class.as_ptr(), std::ptr::null(),
+                WS_POPUP | WS_CLIPCHILDREN, 10, 10, 200, 100, std::ptr::null_mut(),
+                std::ptr::null_mut(), std::ptr::null_mut(), std::ptr::null());
+            assert!(!child.is_null());
+            // Match the widget: create a layered popup, then attach it as a child.
+            SetWindowLongPtrW(child, GWL_STYLE, (WS_CHILD | WS_CLIPCHILDREN) as isize);
+            SetParent(child, parent);
+            let result = (|| -> Result<(), String> {
+                apply_native(parent, 40)?;
+                let mut before = RECT::default();
+                GetWindowRect(child, &mut before);
+                for percent in [20, 70, 100] {
+                    apply_native(child, percent)?;
+                    let mut alpha = 0;
+                    assert_ne!(GetLayeredWindowAttributes(child, std::ptr::null_mut(), &mut alpha, std::ptr::null_mut()), 0);
+                    assert_eq!(alpha, validate(percent)?);
+                    GetLayeredWindowAttributes(parent, std::ptr::null_mut(), &mut alpha, std::ptr::null_mut());
+                    assert_eq!(alpha, validate(40)?);
+                    assert_eq!(GetParent(child), parent);
+                    let style = GetWindowLongPtrW(child, GWL_EXSTYLE) as u32;
+                    assert_eq!(style & (WS_EX_TRANSPARENT | WS_EX_TOPMOST), 0);
+                    assert_ne!(GetWindowLongPtrW(child, GWL_STYLE) as u32 & WS_CHILD, 0);
+                    let mut after = RECT::default();
+                    GetWindowRect(child, &mut after);
+                    assert_eq!((before.left, before.top, before.right, before.bottom),
+                        (after.left, after.top, after.right, after.bottom));
+                }
+                Ok(())
+            })();
+            DestroyWindow(child);
+            DestroyWindow(parent);
+            result.unwrap();
+        }
+    }
 
     #[test]
     fn accepts_limits_and_rounds_alpha() {
@@ -303,7 +624,8 @@ mod tests {
             let _owned = TestWindow(hwnd);
             install_native(hwnd).unwrap();
             *native_state(hwnd).unwrap().lock().unwrap() = OpacityState {
-                normal: 70, hover_enabled: false, hover: 100, applied: Some(70), applying: false,
+                normal: 70, hover_enabled: false, hover: 100, applied: Some(70),
+                ..OpacityState::from_settings(&crate::settings::Settings::default())
             };
             SetWindowLongPtrW(hwnd, GWL_EXSTYLE, WS_EX_LAYERED as isize);
             assert_ne!(SetLayeredWindowAttributes(hwnd, 0, 179, LWA_ALPHA), 0);
@@ -352,7 +674,8 @@ mod tests {
             assert!(!hwnd.is_null());
             install_native(hwnd).unwrap();
             let state = native_state(hwnd).unwrap();
-            *state.lock().unwrap() = OpacityState { normal: 70, hover_enabled: true, hover: 20, applied: Some(20), applying: false };
+            *state.lock().unwrap() = OpacityState { normal: 70, hover_enabled: true, hover: 20, applied: Some(20),
+                ..OpacityState::from_settings(&crate::settings::Settings::default()) };
             apply_native(hwnd, 20).unwrap();
             assert!(!cursor_over_timer(hwnd));
             refresh_native(hwnd, &state).unwrap();

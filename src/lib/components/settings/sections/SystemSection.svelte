@@ -1,11 +1,46 @@
 <script lang="ts">
+  import { getAutostartStatus, setAutostart, type AutostartStatus } from '$lib/ipc';
   import { onMount } from 'svelte';
   import { settings } from '$lib/stores/settings';
   import { setSetting, resetSettings, clearSessionHistory, traySupported } from '$lib/ipc';
   import SettingsToggle from '$lib/components/settings/SettingsToggle.svelte';
   import * as m from '$paraglide/messages.js';
   import { setLocale } from '$lib/locale.svelte.js';
-  import { isMac, isLinux } from '$lib/utils/platform';
+  import { isMac, isLinux, isWindows } from '$lib/utils/platform';
+
+  let autostart = $state<AutostartStatus | null>(null);
+  let startupBusy = $state(false);
+  let startupError = $state('');
+  async function refreshStartup() {
+    if (!isWindows || startupBusy) return;
+    try {
+      autostart = await getAutostartStatus();
+      settings.update(current => ({ ...current, autostart_enabled: autostart!.enabled, autostart_start_hidden: autostart!.start_hidden }));
+    } catch { startupError = m.autostart_status_failed(); }
+  }
+  onMount(() => {
+    void refreshStartup();
+    window.addEventListener('focus', refreshStartup);
+    return () => window.removeEventListener('focus', refreshStartup);
+  });
+  async function toggleStartup() {
+    if (!autostart || startupBusy) return;
+    startupBusy = true; startupError = '';
+    try {
+      autostart = await setAutostart(!autostart.enabled, $settings.autostart_start_hidden);
+      settings.update(current => ({ ...current, autostart_enabled: autostart!.enabled }));
+    } catch (error) {
+      startupError = String(error).includes('rollback') ? m.autostart_rollback_failed() : m.autostart_failed();
+    } finally { startupBusy = false; await refreshStartup(); }
+  }
+  async function setStartupMode(event: Event) {
+    if (startupBusy) return;
+    startupBusy = true; startupError = '';
+    try {
+      settings.set(await setSetting('autostart_start_hidden', String((event.currentTarget as HTMLSelectElement).value === 'tray')));
+    } catch { startupError = m.autostart_failed(); }
+    finally { startupBusy = false; await refreshStartup(); }
+  }
 
   // Language options: value stored in DB, label shown in native language.
   const LANGUAGES = $derived([
@@ -88,6 +123,33 @@
 </script>
 
 <div class="section">
+  {#if isWindows}
+    <div class="group-heading">{m.system_group_startup()}</div>
+    <SettingsToggle
+      label={m.autostart_enabled()}
+      description={m.autostart_desc()}
+      checked={autostart?.enabled ?? false}
+      disabled={!autostart?.available || startupBusy}
+      onclick={toggleStartup}
+    />
+    {#if autostart && !autostart.available}
+      <p class="startup-note">{m.autostart_unavailable()}<br /><code>{autostart.executable}</code></p>
+    {:else if autostart?.reason === 'windows_disabled'}
+      <p class="startup-note">{m.autostart_windows_disabled()}</p>
+    {:else if autostart?.reason === 'registration_mismatch'}
+      <p class="startup-note">{m.autostart_path_changed()}</p>
+    {/if}
+    {#if autostart?.enabled}
+      <div class="startup-mode">
+        <label for="startup-mode">{m.autostart_mode()}</label>
+        <select id="startup-mode" disabled={startupBusy} value={$settings.autostart_start_hidden ? 'tray' : 'window'} onchange={setStartupMode}>
+          <option value="tray">{m.autostart_tray()}</option>
+          <option value="window">{m.autostart_window()}</option>
+        </select>
+      </div>
+    {/if}
+    {#if startupError}<p class="startup-note startup-error" role="alert">{startupError}</p>{/if}
+  {/if}
   <div class="group-heading">{m.system_group_integrations()}</div>
 
   <SettingsToggle
@@ -264,6 +326,12 @@
 </div>
 
 <style>
+  .startup-note { margin: 0; padding: 10px 20px; font-size: 0.75rem; color: var(--color-foreground-darker); overflow-wrap: anywhere; }
+  .startup-note code { font-size: 0.7rem; }
+  .startup-error { color: var(--color-focus-round); }
+  .startup-mode { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 20px; border-bottom: 1px solid var(--color-separator); font-size: 0.8rem; }
+  .startup-mode select { max-width: 55%; padding: 6px; color: var(--color-foreground); background: var(--color-background-light); border: 1px solid var(--color-separator); border-radius: 4px; }
+
   .section {
     display: flex;
     flex-direction: column;
