@@ -388,12 +388,9 @@ pub fn run() {
                             api.prevent_close();
                             let _ = win_for_close.hide();
                         } else {
-                            // Main window is truly closing — close child windows if open.
-                            for label in ["settings", "stats", "desktop-probe"] {
-                                if let Some(win) = app_for_close.get_webview_window(label) {
-                                    let _ = win.close();
-                                }
-                            }
+                            // The widget keeps a hidden owner Window even while disabled.
+                            // Closing only visible windows would leave a headless process.
+                            app_for_close.exit(0);
                         }
                     }
                     #[cfg(not(target_os = "windows"))]
