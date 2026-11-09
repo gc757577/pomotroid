@@ -2,6 +2,7 @@
 // All backend communication goes through this module.
 
 import { invoke } from '@tauri-apps/api/core';
+import * as m from '$paraglide/messages.js';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { open as dialogOpen } from '@tauri-apps/plugin-dialog';
 import type {
@@ -63,7 +64,7 @@ export const clearCustomAudio = (cue: string) => invoke<void>('audio_clear_custo
 export const openAudioFilePicker = (): Promise<string | null> =>
   dialogOpen({
     multiple: false,
-    filters: [{ name: 'Audio', extensions: ['mp3', 'wav', 'ogg'] }],
+    filters: [{ name: m.notif_audio_filter(), extensions: ['mp3', 'wav', 'ogg'] }],
   }) as Promise<string | null>;
 
 // --- Diagnostic log commands ---
@@ -135,3 +136,6 @@ export const onThemesChanged = (cb: (themes: Theme[]) => void): Promise<Unlisten
 
 export const onSessionsCleared = (cb: () => void): Promise<UnlistenFn> =>
   listen<void>('sessions:cleared', () => cb());
+
+export const timerDisplayMode = (toggle = false, prepared?: number) => invoke<boolean>('timer_display_mode', { toggle, prepared });
+export const prepareTimerDisplayMode = () => invoke<{ id: number; horizontal: boolean; width: number; height: number }>('timer_prepare_display_mode');

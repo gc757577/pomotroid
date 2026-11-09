@@ -8,17 +8,18 @@
   import { isMac, isLinux } from '$lib/utils/platform';
 
   // Language options: value stored in DB, label shown in native language.
-  const LANGUAGES = [
-    { value: 'auto', label: 'Auto' },
+  const LANGUAGES = $derived([
+    { value: 'auto', label: m.system_language_auto() },
     { value: 'en', label: 'English' },
     { value: 'es', label: 'Español' },
     { value: 'fr', label: 'Français' },
     { value: 'de', label: 'Deutsch' },
     { value: 'ja', label: '日本語' },
+    { value: 'ko', label: '한국어' },
     { value: 'zh', label: '中文' },
     { value: 'pt', label: 'Português' },
     { value: 'tr', label: 'Türkçe' },
-  ];
+  ]);
 
   // On Linux, probe for libayatana-appindicator3 at runtime.  The tray section
   // is hidden entirely when the library is absent so users can't enable a
@@ -37,7 +38,7 @@
   let langEl: HTMLElement | undefined;
 
   const selectedLabel = $derived(
-    LANGUAGES.find((l) => l.value === $settings.language)?.label ?? 'Auto'
+    LANGUAGES.find((l) => l.value === $settings.language)?.label ?? m.system_language_auto()
   );
 
   async function selectLanguage(value: string) {
@@ -242,16 +243,16 @@
   <div class="data-group">
     {#if !confirmingClear}
       <button class="data-row" onclick={() => (confirmingClear = true)}>
-        <span>Clear Session History</span>
+        <span>{m.system_clear_history()}</span>
       </button>
     {:else}
       <div class="confirm-row">
         <span class="confirm-label"
-          >This will permanently delete all session history. This cannot be undone.</span
+          >{m.system_clear_history_confirm()}</span
         >
         <div class="confirm-actions">
-          <button class="confirm-cancel" onclick={() => (confirmingClear = false)}>Cancel</button>
-          <button class="confirm-destructive" onclick={handleClear}>Clear</button>
+          <button class="confirm-cancel" onclick={() => (confirmingClear = false)}>{m.common_cancel()}</button>
+          <button class="confirm-destructive" onclick={handleClear}>{m.common_clear()}</button>
         </div>
       </div>
     {/if}
@@ -263,8 +264,8 @@
       <div class="confirm-row">
         <span class="confirm-label">{m.about_reset_confirm()}</span>
         <div class="confirm-actions">
-          <button class="confirm-cancel" onclick={() => (confirmingReset = false)}>Cancel</button>
-          <button class="confirm-destructive" onclick={handleReset}>Reset</button>
+          <button class="confirm-cancel" onclick={() => (confirmingReset = false)}>{m.common_cancel()}</button>
+          <button class="confirm-destructive" onclick={handleReset}>{m.timer_reset()}</button>
         </div>
       </div>
     {/if}
@@ -382,6 +383,8 @@
   }
 
   .lang-menu {
+    max-height: min(280px, calc(100vh - 240px));
+    overflow-y: auto;
     position: absolute;
     top: calc(100% + 3px);
     left: 0;

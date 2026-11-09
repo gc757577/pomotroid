@@ -1,4 +1,5 @@
 <script lang="ts">
+  import * as m from '$paraglide/messages.js';
   // Records a single key (no modifiers) as a KeyboardEvent.key string.
   // Used for local (focus-scoped) shortcut bindings.
 
@@ -40,7 +41,7 @@
   class:listening
   readonly
   value={formatLocalKey(value)}
-  placeholder="Click and press a key…"
+  placeholder={m.shortcut_placeholder()}
   onfocus={onFocus}
   onblur={onBlur}
   onkeydown={onKeydown}

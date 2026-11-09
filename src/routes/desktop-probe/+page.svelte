@@ -49,9 +49,9 @@
     if (selected && !disposed) applyTheme(selected);
   }
   function fmtTime(mins: number) {
-    if (mins < 60) return `${mins}m`;
+    if (mins < 60) return m.stats_minutes({ n: mins });
     const hours = Math.floor(mins / 60), rest = mins % 60;
-    return rest ? `${hours}h ${rest}m` : `${hours}h`;
+    return rest ? m.stats_hours_minutes({ h: hours, m: rest }) : m.stats_hours({ n: hours });
   }
 
   let drag: { id: number; x: number; y: number; scale: number; resize: boolean; original?: Geometry; latest?: Geometry } | null = null;

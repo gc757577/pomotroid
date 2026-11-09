@@ -377,6 +377,16 @@ mod tests {
     }
 
     #[test]
+    fn korean_language_survives_reload_and_startup_seeding() {
+        let conn = setup();
+        seed_defaults(&conn).unwrap();
+        save_setting(&conn, "language", "ko").unwrap();
+        assert_eq!(load(&conn).unwrap().language, "ko");
+        seed_defaults(&conn).unwrap();
+        assert_eq!(load(&conn).unwrap().language, "ko");
+    }
+
+    #[test]
     fn opacity_round_trip_and_invalid_values_fall_back() {
         let conn = setup();
         seed_defaults(&conn).unwrap();

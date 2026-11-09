@@ -53,7 +53,7 @@ export interface Settings {
   theme_light: string;
   theme_dark: string;
   dial_countdown: boolean;
-  language: string; // 'auto' | 'en' | 'es' | 'fr' | 'de' | 'ja'
+  language: string; // 'auto' or a supported Paraglide locale tag
   verbose_logging: boolean;
   check_for_updates: boolean;
   global_shortcuts_enabled: boolean;

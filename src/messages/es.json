@@ -162,5 +162,8 @@
   "widget_position_failed": "No se pudo guardar la posición.",
   "widget_move": "Arrastra para mover · ajusta con las flechas",
   "widget_resize": "Arrastra para cambiar el tamaño · ajusta con las flechas",
-  "widget_open_failed": "No se pudo abrir el widget."
+  "widget_open_failed": "No se pudo abrir el widget.",
+  "timer_mode_horizontal": "Modo mini horizontal",
+  "timer_mode_normal": "Modo normal",
+  "timer_mode_failed": "No se pudo cambiar el modo de visualización."
 }

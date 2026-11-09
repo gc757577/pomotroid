@@ -57,7 +57,8 @@
 
   function queueOpacity(action: () => Promise<void>) {
     opacityQueue = opacityQueue.then(action).catch((error) => {
-      opacityError = String(error);
+      console.error('[opacity]', error);
+      opacityError = m.appearance_opacity_failed();
       adjustingOpacity = false;
       adjustingHover = false;
       opacity = get(settings).timer_opacity_percent;

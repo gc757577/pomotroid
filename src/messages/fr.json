@@ -162,5 +162,8 @@
   "widget_position_failed": "Impossible d’enregistrer la position.",
   "widget_move": "Glisser pour déplacer · ajuster avec les flèches",
   "widget_resize": "Glisser pour redimensionner · ajuster avec les flèches",
-  "widget_open_failed": "Impossible d’ouvrir le widget."
+  "widget_open_failed": "Impossible d’ouvrir le widget.",
+  "timer_mode_horizontal": "Mode mini horizontal",
+  "timer_mode_normal": "Mode normal",
+  "timer_mode_failed": "Impossible de changer le mode d’affichage."
 }

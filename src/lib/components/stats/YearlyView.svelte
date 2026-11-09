@@ -216,7 +216,7 @@
             tooltip = null;
           }}
           role="img"
-          aria-label="Annual activity heatmap"
+          aria-label={m.stats_annual_activity()}
         >
           <!-- Month labels -->
           {#each months as mo}

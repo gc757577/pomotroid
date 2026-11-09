@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { fade } from 'svelte/transition';
+  import * as m from '$paraglide/messages.js';
   import { timerToggle, timerRestartRound, timerSkip } from '$lib/ipc';
   import { timerState } from '$lib/stores/timer';
 
@@ -8,7 +8,7 @@
 
 <div class="mini-controls">
   <!-- Restart current round -->
-  <button class="btn-side" onclick={timerRestartRound} aria-label="Restart round">
+  <button class="btn-side" onclick={timerRestartRound} aria-label={m.shortcuts_restart_round()}>
     <svg width="10" height="10" viewBox="0 0 16 16">
       <polygon points="15,1 6,8 15,15" fill="currentColor" />
       <rect x="1" y="1" width="3" height="14" rx="1" fill="currentColor" />
@@ -16,9 +16,9 @@
   </button>
 
   <!-- Play / Pause -->
-  <button class="play-pause" onclick={timerToggle} aria-label={state.is_running ? 'Pause' : 'Play'}>
+  <button class="play-pause" onclick={timerToggle} aria-label={state.is_running ? m.tray_pause() : m.tray_start()}>
     {#key state.is_running}
-      <span class="icon" in:fade={{ duration: 100 }}>
+      <span class="icon">
         {#if state.is_running}
           <svg width="12" height="12" viewBox="0 0 24 24">
             <rect x="4" y="3" width="5" height="18" rx="1.5" fill="currentColor" />
@@ -34,7 +34,7 @@
   </button>
 
   <!-- Skip round -->
-  <button class="btn-side" onclick={timerSkip} aria-label="Skip round">
+  <button class="btn-side" onclick={timerSkip} aria-label={m.shortcuts_skip_round()}>
     <svg width="10" height="10" viewBox="0 0 16 16">
       <polygon points="1,1 10,8 1,15" fill="currentColor" />
       <rect x="12" y="1" width="3" height="14" rx="1" fill="currentColor" />

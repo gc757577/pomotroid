@@ -3,6 +3,7 @@
   // Replicates the original Pomotroid dial: fills from 0% to 100% as time elapses.
   // Uses Svelte tweened store for smooth animation.
   import { tweened } from 'svelte/motion';
+  import { roundColor } from '$lib/utils/timer-progress';
   import { cubicOut } from 'svelte/easing';
   import type { TimerState } from '$lib/types';
 
@@ -19,13 +20,6 @@
   // Tweened offset: starts at full circumference (invisible), animates toward 0 (full arc).
   const dashOffset = tweened(CIRCUMFERENCE, { duration: 800, easing: cubicOut });
 
-  // Round-type → CSS custom property for stroke color.
-  function strokeColor(rt: string): string {
-    if (rt === 'work') return 'var(--color-focus-round)';
-    if (rt === 'short-break') return 'var(--color-short-round)';
-    return 'var(--color-long-round)';
-  }
-
   // Track previous round to detect round changes and snap the animation.
   // Not reactive — only used for comparison inside $effect.
   let prevRound = $state<string>('');
@@ -40,7 +34,11 @@
     const startOffset = countdown ? 0 : CIRCUMFERENCE;
 
     // On round change: snap to start position immediately.
-    if (rt !== prevRound) {
+    if (prevRound === '') {
+      // Returning from horizontal mode starts at the current round progress.
+      dashOffset.set(target, { duration: 0 });
+      prevRound = rt;
+    } else if (rt !== prevRound) {
       dashOffset.set(startOffset, { duration: 0 });
       prevRound = rt;
     } else {
@@ -63,7 +61,7 @@
     class="progress"
     d="M115,5c60.8,0,110,49.2,110,110s-49.2,110-110,110S5,175.8,5,115S54.2,5,115,5"
     fill="none"
-    stroke={strokeColor(snap.round_type)}
+    stroke={roundColor(snap.round_type)}
     stroke-width="10"
     stroke-linecap="round"
     stroke-dasharray={CIRCUMFERENCE}

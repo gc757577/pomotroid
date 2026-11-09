@@ -37,6 +37,7 @@ export interface LocalShortcutState {
   setPreMuteVolume: (v: number) => void;
   /** Current fullscreen state. */
   getFullscreen: () => boolean;
+  canFullscreen?: () => boolean;
   setFullscreen: (v: boolean) => void;
 }
 
@@ -92,6 +93,7 @@ export function createLocalShortcutHandler(state: LocalShortcutState): (e: Keybo
       }
     } else if (key === s.local_shortcut_fullscreen) {
       e.preventDefault();
+      if (state.canFullscreen?.() === false) return;
       const next = !state.getFullscreen();
       state.setFullscreen(next);
       getCurrentWebviewWindow().setFullscreen(next);

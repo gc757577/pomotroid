@@ -1,17 +1,25 @@
 <script lang="ts">
   import '../app.css';
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import Titlebar from '$lib/components/Titlebar.svelte';
   import Timer from '$lib/components/Timer.svelte';
-  import { getSettings, getThemes, onSettingsChanged, onThemesChanged } from '$lib/ipc';
+  import {
+    getSettings,
+    getThemes,
+    onSettingsChanged,
+    onThemesChanged,
+    timerDisplayMode,
+    prepareTimerDisplayMode,
+  } from '$lib/ipc';
   import { settings } from '$lib/stores/settings';
   import { applyTheme } from '$lib/stores/theme';
   import { resolveThemeName } from '$lib/utils/theme';
-  import { isMac } from '$lib/utils/platform';
+  import { isMac, isWindows } from '$lib/utils/platform';
   import { setLocale } from '$lib/locale.svelte.js';
   import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
   import type { UnlistenFn } from '@tauri-apps/api/event';
   import { info, error as logError } from '@tauri-apps/plugin-log';
+  import { normalTimerLayout } from '$lib/utils/timer-layout';
   import { createLocalShortcutHandler } from '$lib/utils/localShortcuts';
 
   // Local shortcut state — volume and fullscreen tracked separately so the
@@ -19,40 +27,38 @@
   let localVolume = $state(1.0);
   let preMuteVolume = $state(0.5);
   let isFullscreen = $state(false);
-
-  // Base window dimensions (natural/default size).
-  const BASE_W = 360;
-  const BASE_H = 478;
-  const TITLEBAR_H = 40;
-
-  // Compact mode: when either dimension drops below this threshold,
-  // hide non-essential elements (footer, label, play/pause) to show
-  // only the timer dial — like an Apple Watch face.
-  const COMPACT_THRESHOLD = 300;
-
+  let horizontal = $state(false);
+  let changingMode = $state(false);
   let uiScale = $state(1.0);
   let isCompact = $state(false);
 
-  // Extra bottom padding added to <main> in compact mode.  Shifts the
-  // dial upward so the whitespace sits at the bottom rather than being
-  // split equally — compensates for the visual weight of the titlebar.
-  const COMPACT_BOTTOM_PAD = 48;
-
-  $effect(() => {
-    function update() {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      isCompact = w < COMPACT_THRESHOLD || h < COMPACT_THRESHOLD;
-      if (isCompact) {
-        // Scale so the dial fills the available space, reserving
-        // COMPACT_BOTTOM_PAD px for the intentional bottom whitespace.
-        const available = Math.min(w - 16, h - TITLEBAR_H - 16 - COMPACT_BOTTOM_PAD);
-        uiScale = Math.max(0.4, Math.min(available / 220, 4));
-      } else {
-        // Scale proportionally to the base window dimensions.
-        uiScale = Math.max(0.5, Math.min(w / BASE_W, (h - TITLEBAR_H) / (BASE_H - TITLEBAR_H), 4));
-      }
+  function prepareNormalLayout(width: number, height: number) {
+    const layout = normalTimerLayout(width, height);
+    if (layout) {
+      uiScale = layout.uiScale;
+      isCompact = layout.isCompact;
     }
+  }
+
+  async function toggleMode() {
+    if (changingMode) return;
+    changingMode = true;
+    try {
+      const plan = await prepareTimerDisplayMode();
+      if (!plan.horizontal) prepareNormalLayout(plan.width, plan.height);
+      // Both views already exist. Flush the hidden normal layout before the
+      // native resize makes it visible through the viewport media query.
+      await tick();
+      horizontal = await timerDisplayMode(true, plan.id);
+      prepareNormalLayout(window.innerWidth, window.innerHeight);
+      isFullscreen = false;
+    } finally {
+      changingMode = false;
+    }
+  }
+
+  onMount(() => {
+    const update = () => prepareNormalLayout(window.innerWidth, window.innerHeight);
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
@@ -65,7 +71,6 @@
 
   onMount(() => {
     const cleanups: UnlistenFn[] = [];
-
     // Mount local keyboard shortcut handler.
     const shortcutHandler = createLocalShortcutHandler({
       getSettings: () => $settings,
@@ -78,6 +83,7 @@
         preMuteVolume = v;
       },
       getFullscreen: () => isFullscreen,
+      canFullscreen: () => !horizontal && !changingMode,
       setFullscreen: (v) => {
         isFullscreen = v;
       },
@@ -87,6 +93,7 @@
 
     (async () => {
       try {
+        if (isWindows) horizontal = await timerDisplayMode();
         // Load settings from backend.
         const s = await getSettings();
         settings.set(s);
@@ -160,7 +167,7 @@
 
 <!-- Resize handles — invisible edge/corner strips for decorations-free windows.
      Not needed on macOS where native resizing is provided by decorations:true. -->
-{#if !isMac}
+{#if !isMac && !horizontal && !changingMode}
   <!-- N -->
   <div class="rh rh-n" onmousedown={() => startResize('North')} role="none"></div>
   <!-- S -->
@@ -180,8 +187,8 @@
 {/if}
 
 <div class="app">
-  <Titlebar />
-  <main class:compact={isCompact}>
+  <Titlebar {horizontal} onToggleMode={toggleMode} />
+  <main>
     <Timer {isCompact} {uiScale} />
   </main>
 </div>
@@ -198,15 +205,11 @@
 
   main {
     flex: 1;
+    min-height: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-  }
-
-  main.compact {
-    /* Bottom padding provides breathing room below the mini controls. */
-    padding-bottom: 8px;
   }
 
   /* ---------------------------------------------------------------------------

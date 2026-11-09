@@ -12,7 +12,7 @@
   <h1 class="title">{m.settings_title()}</h1>
   <!-- Hidden on macOS; the native traffic light close button handles this. -->
   {#if !isMac}
-    <button class="btn-close" onclick={close} aria-label="Close">
+    <button class="btn-close" onclick={close} aria-label={m.common_close()}>
       <svg width="12" height="12" viewBox="0 0 12 12">
         <line
           x1="1"

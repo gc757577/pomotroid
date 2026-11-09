@@ -162,5 +162,8 @@
   "widget_position_failed": "Widget-Position konnte nicht gespeichert werden.",
   "widget_move": "Zum Verschieben ziehen · Pfeiltasten zum Anpassen",
   "widget_resize": "Zum Ändern der Größe ziehen · Pfeiltasten zum Anpassen",
-  "widget_open_failed": "Desktop-Widget konnte nicht geöffnet werden."
+  "widget_open_failed": "Desktop-Widget konnte nicht geöffnet werden.",
+  "timer_mode_horizontal": "Horizontaler Minimodus",
+  "timer_mode_normal": "Standardmodus",
+  "timer_mode_failed": "Anzeigemodus konnte nicht geändert werden."
 }

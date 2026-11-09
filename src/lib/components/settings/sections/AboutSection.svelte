@@ -48,7 +48,7 @@
           await info('[about] already up to date');
         }
       } catch (e) {
-        updateError = String(e);
+        updateError = m.about_update_error();
         updateState = 'error';
         await warn(`[about] update check failed: ${e}`);
       }
@@ -61,7 +61,7 @@
     try {
       await installUpdate();
     } catch (e) {
-      updateError = String(e);
+      updateError = m.about_update_install_failed();
       updateState = 'error';
       await logError(`[about] update install failed: ${e}`);
     }
@@ -150,7 +150,7 @@
         </button>
       {:else if updateState === 'installing'}
         <div class="update-row update-row--muted">
-          <span>Installing…</span>
+          <span>{m.about_update_installing()}</span>
         </div>
       {:else if updateState === 'error'}
         <div class="update-row update-row--muted">

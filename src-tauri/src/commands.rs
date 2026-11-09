@@ -881,3 +881,42 @@ mod tests {
     }
 }
 
+
+/// Receive resolved translations, including the automatic OS language choice.
+#[tauri::command]
+pub fn tray_set_labels(labels: tray::TrayLabels, tray_state: State<'_, Arc<TrayState>>, timer: State<'_, TimerController>) {
+    *tray_state.labels.lock().unwrap() = labels;
+    let snapshot = timer.get_snapshot();
+    tray::update_menu_items(&tray_state, snapshot.is_running, snapshot.is_paused);
+}
+
+/// Display changes do not reconfigure the timer or its round sequence.
+#[tauri::command]
+pub async fn timer_display_mode(window: tauri::WebviewWindow, toggle: bool, prepared: Option<u64>) -> Result<bool, String> {
+    if window.label() != "main" { return Err("Only the timer can change display mode".into()); }
+    #[cfg(target_os = "windows")]
+    {
+        let app = window.app_handle().clone();
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        app.run_on_main_thread(move || { let _ = tx.send(crate::window_state::display_mode(&window, toggle, prepared)); })
+            .map_err(|e| e.to_string())?;
+        rx.await.map_err(|e| e.to_string())?
+    }
+    #[cfg(not(target_os = "windows"))]
+    { let _ = (toggle, prepared); Ok(false) }
+}
+
+#[tauri::command]
+pub async fn timer_prepare_display_mode(window: tauri::WebviewWindow) -> Result<serde_json::Value, String> {
+    if window.label() != "main" { return Err("Only the timer can change display mode".into()); }
+    #[cfg(target_os = "windows")]
+    {
+        let app = window.app_handle().clone();
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        app.run_on_main_thread(move || { let _ = tx.send(crate::window_state::prepare_display_mode(&window)); }).map_err(|e| e.to_string())?;
+        let plan = rx.await.map_err(|e| e.to_string())??;
+        serde_json::to_value(plan).map_err(|e| e.to_string())
+    }
+    #[cfg(not(target_os = "windows"))]
+    { Err("Display modes are supported on Windows".into()) }
+}

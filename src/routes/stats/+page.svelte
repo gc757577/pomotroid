@@ -133,7 +133,7 @@
   <nav class="titlebar" class:macos={isMac} data-tauri-drag-region>
     <span class="titlebar-label">{m.stats_title()}</span>
     {#if !isMac}
-      <button class="btn-close" onclick={close} aria-label="Close">
+      <button class="btn-close" onclick={close} aria-label={m.common_close()}>
         <svg width="12" height="12" viewBox="0 0 12 12">
           <line
             x1="1"

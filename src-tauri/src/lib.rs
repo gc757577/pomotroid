@@ -11,6 +11,8 @@ pub mod websocket;
 pub mod window_opacity;
 #[cfg(target_os = "windows")]
 mod desktop_widget;
+#[cfg(target_os = "windows")]
+mod window_state;
 
 use std::sync::Arc;
 
@@ -329,6 +331,7 @@ pub fn run() {
 
             // Restore saved window position/size if all four values are present and
             // the saved rectangle still intersects at least one connected monitor.
+            #[cfg(not(target_os = "windows"))]
             if let (Some(wx), Some(wy), Some(ww), Some(wh)) = (
                 initial_settings.window_x,
                 initial_settings.window_y,
@@ -358,12 +361,17 @@ pub fn run() {
                 }
             }
 
+            #[cfg(target_os = "windows")]
+            window_state::install(&main_window, db.clone(), &initial_settings)?;
+
             // Persist window position/size on move and resize, and close child windows
             // when the main window is truly closed (not hidden to tray).
             let db_for_close = db.clone();
             let win_for_close = main_window.clone();
             let app_for_close = app.handle().clone();
+            #[cfg(not(target_os = "windows"))]
             let db_for_pos = db.clone();
+            #[cfg(not(target_os = "windows"))]
             let win_for_pos = main_window.clone();
             main_window.on_window_event(move |event| {
                 match event {
@@ -386,12 +394,14 @@ pub fn run() {
                             }
                         }
                     }
+                    #[cfg(not(target_os = "windows"))]
                     tauri::WindowEvent::Moved(pos) => {
                         if let Ok(conn) = db_for_pos.lock() {
                             let _ = settings::save_setting(&conn, "window_x", &pos.x.to_string());
                             let _ = settings::save_setting(&conn, "window_y", &pos.y.to_string());
                         }
                     }
+                    #[cfg(not(target_os = "windows"))]
                     tauri::WindowEvent::Resized(size) => {
                         if let Ok(conn) = db_for_pos.lock() {
                             let _ = settings::save_setting(&conn, "window_width", &size.width.to_string());
@@ -434,6 +444,9 @@ pub fn run() {
             window_set_visibility,
             window_preview_opacity,
             commands::widget_action,
+            commands::tray_set_labels,
+            commands::timer_display_mode,
+            commands::timer_prepare_display_mode,
             // Shortcuts
             shortcuts_reload,
             // Audio

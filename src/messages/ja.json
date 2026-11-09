@@ -162,5 +162,8 @@
   "widget_position_failed": "位置を保存できませんでした。",
   "widget_move": "ドラッグで移動・矢印キーで調整",
   "widget_resize": "ドラッグでサイズ変更・矢印キーで調整",
-  "widget_open_failed": "ウィジェットを開けませんでした。"
+  "widget_open_failed": "ウィジェットを開けませんでした。",
+  "timer_mode_horizontal": "横長ミニモード",
+  "timer_mode_normal": "通常モード",
+  "timer_mode_failed": "表示モードを変更できませんでした。"
 }

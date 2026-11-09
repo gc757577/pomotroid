@@ -1,4 +1,5 @@
 <script lang="ts">
+  import * as m from '$paraglide/messages.js';
   import Tooltip from './Tooltip.svelte';
 
   interface Props {
@@ -16,7 +17,7 @@
   <span
     class="info-icon"
     role="img"
-    aria-label="More information"
+    aria-label={m.common_more_info()}
     onclick={(e) => e.stopPropagation()}
   >
     <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">

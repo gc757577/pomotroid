@@ -98,6 +98,7 @@
       path = await openAudioFilePicker();
     } catch (err) {
       await logError(`[audio] file picker error: ${err}`);
+      setError(id, m.notif_audio_picker_failed());
       return;
     }
     if (!path) return;
@@ -107,7 +108,7 @@
       setError(id, null);
     } catch (err) {
       await logError(`[audio] setCustomAudio failed: ${err}`);
-      setError(id, String(err));
+      setError(id, m.notif_audio_failed());
     }
   }
 
@@ -118,6 +119,7 @@
       setError(id, null);
     } catch (err) {
       await logError(`[audio] clearCustomAudio failed: ${err}`);
+      setError(id, m.notif_audio_restore_failed());
     }
   }
 </script>

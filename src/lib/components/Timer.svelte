@@ -15,7 +15,6 @@
   } from '$lib/ipc';
   import { timerState } from '$lib/stores/timer';
   import { settings } from '$lib/stores/settings';
-  import { fade } from 'svelte/transition';
   import TimerDial from './TimerDial.svelte';
   import TimerDisplay from './TimerDisplay.svelte';
   import TimerFooter from './TimerFooter.svelte';
@@ -23,6 +22,7 @@
   import Tooltip from './Tooltip.svelte';
   import type { UnlistenFn } from '@tauri-apps/api/event';
   import * as m from '$paraglide/messages.js';
+  import { remainingRatio, roundColor } from '$lib/utils/timer-progress';
   import { notificationShow } from '$lib/ipc';
 
   interface Props {
@@ -33,12 +33,7 @@
   let { isCompact = false, uiScale = 1 }: Props = $props();
 
   let state = $derived($timerState);
-
-  function roundColor(rt: string): string {
-    if (rt === 'work') return 'var(--color-focus-round)';
-    if (rt === 'short-break') return 'var(--color-short-round)';
-    return 'var(--color-long-round)';
-  }
+  let remaining = $derived(remainingRatio(state.elapsed_secs, state.total_secs));
 
   function roundLabel(rt: string): string {
     if (rt === 'work') return m.round_label_work();
@@ -113,80 +108,146 @@
   });
 </script>
 
-<div class="timer-outer" class:compact={isCompact}>
-  <div class="timer" style="zoom: {uiScale}">
-    <!-- Dial + display stacked (display centered over dial) -->
-    <div class="dial-stack">
-      <TimerDial snap={state} countdown={$settings.dial_countdown} />
-      <TimerDisplay {state} />
+<div class="timer-outer">
+  <div class="mode-view horizontal-view">
+    <div
+      class="remaining-bar"
+      role="progressbar"
+      aria-label={roundLabel(state.round_type)}
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow={Math.round(remaining * 100)}
+    >
+      <div
+        class="remaining-fill"
+        style:width={`${remaining * 100}%`}
+        style:background={roundColor(state.round_type)}
+      ></div>
+    </div>
+    <MiniControls />
+  </div>
+  <div class="mode-view normal-view" class:compact={isCompact}>
+    <div class="timer" style="zoom: {uiScale}">
+      <!-- Dial + display stacked (display centered over dial) -->
+      <div class="dial-stack">
+        <TimerDial snap={state} countdown={$settings.dial_countdown} />
+        <TimerDisplay {state} />
+      </div>
+
+      {#if !isCompact}
+        <!-- Round type label sits below the dial as a normal flex child so it
+             does not affect the dial-stack height used to centre TimerDisplay. -->
+        <div class="round-label" style="color: {roundColor(state.round_type)}">
+          {roundLabel(state.round_type)}
+        </div>
+
+        <div class="controls-wrapper">
+          <!-- Back: restart current round -->
+          <Tooltip text={m.tooltip_restart_round()}>
+            <button
+              class="btn-side"
+              onclick={timerRestartRound}
+              aria-label={m.shortcuts_restart_round()}
+            >
+              <svg width="18" height="18" viewBox="0 0 16 16">
+                <polygon points="15,1 6,8 15,15" fill="currentColor" />
+                <rect x="1" y="1" width="3" height="14" rx="1" fill="currentColor" />
+              </svg>
+            </button>
+          </Tooltip>
+
+          <!-- Play / Pause -->
+          <button
+            class="play-pause"
+            onclick={timerToggle}
+            aria-label={state.is_running ? m.tray_pause() : m.tray_start()}
+          >
+            {#key state.is_running}
+              <span class="icon">
+                {#if state.is_running}
+                  <svg width="24" height="24" viewBox="0 0 24 24">
+                    <rect x="5" y="3" width="5" height="18" rx="1.5" fill="currentColor" />
+                    <rect x="14" y="3" width="5" height="18" rx="1.5" fill="currentColor" />
+                  </svg>
+                {:else}
+                  <svg width="18" height="18" viewBox="0 0 24 24" style="overflow: visible;">
+                    <polygon points="4,0 28,12 4,24" fill="currentColor" />
+                  </svg>
+                {/if}
+              </span>
+            {/key}
+          </button>
+
+          <!-- Skip: advance to next round -->
+          <Tooltip text={m.tooltip_skip()}>
+            <button class="btn-side" onclick={timerSkip} aria-label={m.shortcuts_skip_round()}>
+              <svg width="18" height="18" viewBox="0 0 16 16">
+                <polygon points="1,1 10,8 1,15" fill="currentColor" />
+                <rect x="12" y="1" width="3" height="14" rx="1" fill="currentColor" />
+              </svg>
+            </button>
+          </Tooltip>
+
+          <TimerFooter snap={state} />
+        </div>
+      {/if}
     </div>
 
-    {#if !isCompact}
-      <!-- Round type label sits below the dial as a normal flex child so it
-           does not affect the dial-stack height used to centre TimerDisplay. -->
-      <div class="round-label" style="color: {roundColor(state.round_type)}">
-        {roundLabel(state.round_type)}
-      </div>
-
-      <div class="controls-wrapper">
-        <!-- Back: restart current round -->
-        <Tooltip text={m.tooltip_restart_round()}>
-          <button class="btn-side" onclick={timerRestartRound} aria-label="Restart round">
-            <svg width="18" height="18" viewBox="0 0 16 16">
-              <polygon points="15,1 6,8 15,15" fill="currentColor" />
-              <rect x="1" y="1" width="3" height="14" rx="1" fill="currentColor" />
-            </svg>
-          </button>
-        </Tooltip>
-
-        <!-- Play / Pause — icon fades when state changes -->
-        <button
-          class="play-pause"
-          onclick={timerToggle}
-          aria-label={state.is_running ? 'Pause' : 'Play'}
-        >
-          {#key state.is_running}
-            <span class="icon" in:fade={{ duration: 120 }}>
-              {#if state.is_running}
-                <svg width="24" height="24" viewBox="0 0 24 24">
-                  <rect x="5" y="3" width="5" height="18" rx="1.5" fill="currentColor" />
-                  <rect x="14" y="3" width="5" height="18" rx="1.5" fill="currentColor" />
-                </svg>
-              {:else}
-                <svg width="18" height="18" viewBox="0 0 24 24" style="overflow: visible;">
-                  <polygon points="4,0 28,12 4,24" fill="currentColor" />
-                </svg>
-              {/if}
-            </span>
-          {/key}
-        </button>
-
-        <!-- Skip: advance to next round -->
-        <Tooltip text={m.tooltip_skip()}>
-          <button class="btn-side" onclick={timerSkip} aria-label="Skip round">
-            <svg width="18" height="18" viewBox="0 0 16 16">
-              <polygon points="1,1 10,8 1,15" fill="currentColor" />
-              <rect x="12" y="1" width="3" height="14" rx="1" fill="currentColor" />
-            </svg>
-          </button>
-        </Tooltip>
-
-        <TimerFooter snap={state} />
-      </div>
+    {#if isCompact}
+      <MiniControls />
     {/if}
   </div>
-
-  {#if isCompact}
-    <MiniControls />
-  {/if}
 </div>
 
 <style>
   .timer-outer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .mode-view {
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 8px;
+  }
+
+  .normal-view.compact {
+    padding-bottom: 8px;
+  }
+  .horizontal-view {
+    padding: 4px 12px 8px;
+  }
+  .horizontal-view {
+    display: none;
+  }
+
+  @media (max-height: 160px) {
+    .normal-view {
+      display: none;
+    }
+    .horizontal-view {
+      display: flex;
+    }
+  }
+
+  .remaining-bar {
+    width: 100%;
+    height: 12px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--color-background-light);
+  }
+
+  .remaining-fill {
+    height: 100%;
+    border-radius: inherit;
   }
 
   .timer {

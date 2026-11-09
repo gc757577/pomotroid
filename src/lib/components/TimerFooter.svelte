@@ -73,7 +73,7 @@
     <button
       class="btn-icon"
       onclick={toggleMute}
-      aria-label={localVolume === 0 ? 'Unmute' : 'Mute'}
+      aria-label={localVolume === 0 ? m.tooltip_unmute() : m.tooltip_mute()}
       onmouseenter={() => (showVolume = true)}
       onmouseleave={() => (showVolume = false)}
     >
@@ -124,7 +124,7 @@
         value={localVolume}
         oninput={handleVolumeChange}
         class="volume-slider"
-        aria-label="Volume"
+        aria-label={m.notif_label_volume()}
       />
     </div>
   {/if}

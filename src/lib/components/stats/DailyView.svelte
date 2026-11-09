@@ -10,10 +10,10 @@
   const BAR_GAP = 9; // px between bars
 
   function fmtTime(mins: number): string {
-    if (mins < 60) return `${mins}m`;
+    if (mins < 60) return m.stats_minutes({ n: mins });
     const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return m === 0 ? `${h}h` : `${h}h ${m}m`;
+    const rest = mins % 60;
+    return rest === 0 ? m.stats_hours({ n: h }) : m.stats_hours_minutes({ h, m: rest });
   }
 
   function fmtRate(rate: number | null): string {
@@ -27,6 +27,7 @@
 
   // Hour labels: show every 6 hours
   const hourLabels = [0, 6, 12, 18];
+  const hourTexts = $derived([m.stats_hour_0(), m.stats_hour_6(), m.stats_hour_12(), m.stats_hour_18()]);
 </script>
 
 <div class="view">
@@ -84,7 +85,7 @@
           <!-- Hour label (every 6 hours) -->
           {#if hourLabels.includes(h)}
             <text x={x + BAR_W / 2} y={CHART_H + 18} text-anchor="middle" class="hour-label"
-              >{h === 0 ? '12a' : h === 12 ? '12p' : h < 12 ? `${h}a` : `${h - 12}p`}</text
+              >{hourTexts[h / 6]}</text
             >
           {/if}
         {/each}

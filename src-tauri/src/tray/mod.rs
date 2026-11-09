@@ -101,12 +101,36 @@ pub fn parse_hex_color(hex: &str) -> Option<[u8; 4]> {
 // Shared tray state
 // ---------------------------------------------------------------------------
 
+/// Labels are translated by the same Paraglide catalog as the WebViews.
+#[derive(Clone, serde::Deserialize)]
+pub struct TrayLabels {
+    pub start: String,
+    pub pause: String,
+    pub resume: String,
+    pub skip: String,
+    pub reset_round: String,
+    pub show: String,
+    pub exit: String,
+}
+
+impl Default for TrayLabels {
+    fn default() -> Self {
+        Self {
+            start: "Start".into(), pause: "Pause".into(), resume: "Resume".into(),
+            skip: "Skip".into(), reset_round: "Reset Round".into(),
+            show: "Show".into(), exit: "Exit".into(),
+        }
+    }
+}
+
 /// Handles to the dynamic timer-control menu items.
 /// Stored in `TrayState` so the timer event thread can update labels/enabled states.
 pub struct TrayMenuItems {
     pub toggle: MenuItem<tauri::Wry>,
     pub skip: MenuItem<tauri::Wry>,
     pub reset_round: MenuItem<tauri::Wry>,
+    pub show: MenuItem<tauri::Wry>,
+    pub exit: MenuItem<tauri::Wry>,
 }
 
 /// Tauri-managed state for the tray icon (uses the default Wry runtime).
@@ -115,6 +139,7 @@ pub struct TrayState {
     pub colors: Mutex<TrayColors>,
     pub countdown_mode: Mutex<bool>,
     pub menu_items: Mutex<Option<TrayMenuItems>>,
+    pub labels: Mutex<TrayLabels>,
 }
 
 impl TrayState {
@@ -124,6 +149,7 @@ impl TrayState {
             colors: Mutex::new(TrayColors::default()),
             countdown_mode: Mutex::new(false),
             menu_items: Mutex::new(None),
+            labels: Mutex::new(TrayLabels::default()),
         })
     }
 }
@@ -230,15 +256,16 @@ pub fn create_tray(app: &AppHandle, state: &Arc<TrayState>) {
         return;
     }
 
-    let toggle_item = match MenuItem::with_id(app, "toggle", "Start", true, None::<&str>) {
+    let labels = state.labels.lock().unwrap().clone();
+    let toggle_item = match MenuItem::with_id(app, "toggle", &labels.start, true, None::<&str>) {
         Ok(i) => i,
         Err(e) => { log::warn!("[tray] menu item error: {e}"); return; }
     };
-    let skip_item = match MenuItem::with_id(app, "skip", "Skip", false, None::<&str>) {
+    let skip_item = match MenuItem::with_id(app, "skip", &labels.skip, false, None::<&str>) {
         Ok(i) => i,
         Err(e) => { log::warn!("[tray] menu item error: {e}"); return; }
     };
-    let reset_item = match MenuItem::with_id(app, "reset-round", "Reset Round", false, None::<&str>) {
+    let reset_item = match MenuItem::with_id(app, "reset-round", &labels.reset_round, false, None::<&str>) {
         Ok(i) => i,
         Err(e) => { log::warn!("[tray] menu item error: {e}"); return; }
     };
@@ -246,11 +273,11 @@ pub fn create_tray(app: &AppHandle, state: &Arc<TrayState>) {
         Ok(i) => i,
         Err(e) => { log::warn!("[tray] menu item error: {e}"); return; }
     };
-    let show_item = match MenuItem::with_id(app, "show", "Show", true, None::<&str>) {
+    let show_item = match MenuItem::with_id(app, "show", &labels.show, true, None::<&str>) {
         Ok(i) => i,
         Err(e) => { log::warn!("[tray] menu item error: {e}"); return; }
     };
-    let exit_item = match MenuItem::with_id(app, "exit", "Exit", true, None::<&str>) {
+    let exit_item = match MenuItem::with_id(app, "exit", &labels.exit, true, None::<&str>) {
         Ok(i) => i,
         Err(e) => { log::warn!("[tray] menu item error: {e}"); return; }
     };
@@ -341,6 +368,8 @@ pub fn create_tray(app: &AppHandle, state: &Arc<TrayState>) {
                 toggle: toggle_item,
                 skip: skip_item,
                 reset_round: reset_item,
+                show: show_item,
+                exit: exit_item,
             });
             log::info!("[tray] created");
         }
@@ -393,13 +422,18 @@ pub fn update_icon(state: &Arc<TrayState>, round_type: &str, paused: bool, progr
 ///
 /// No-op when the tray menu has not been created yet.
 pub fn update_menu_items(state: &Arc<TrayState>, is_running: bool, is_paused: bool) {
+    let labels = state.labels.lock().unwrap().clone();
     let guard = state.menu_items.lock().unwrap();
     let Some(items) = guard.as_ref() else { return };
 
-    let toggle_label = if is_running { "Pause" } else if is_paused { "Resume" } else { "Start" };
+    let toggle_label = if is_running { &labels.pause } else if is_paused { &labels.resume } else { &labels.start };
     let controls_enabled = is_running || is_paused;
 
     let _ = items.toggle.set_text(toggle_label);
+    let _ = items.skip.set_text(&labels.skip);
+    let _ = items.reset_round.set_text(&labels.reset_round);
+    let _ = items.show.set_text(&labels.show);
+    let _ = items.exit.set_text(&labels.exit);
     let _ = items.skip.set_enabled(controls_enabled);
     let _ = items.reset_round.set_enabled(controls_enabled);
 }

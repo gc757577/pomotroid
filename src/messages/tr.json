@@ -162,5 +162,8 @@
   "widget_position_failed": "Araç konumu kaydedilemedi.",
   "widget_move": "Taşımak için sürükleyin · ok tuşlarıyla ayarlayın",
   "widget_resize": "Boyut için sürükleyin · ok tuşlarıyla ayarlayın",
-  "widget_open_failed": "Masaüstü aracı açılamadı."
+  "widget_open_failed": "Masaüstü aracı açılamadı.",
+  "timer_mode_horizontal": "Yatay mini mod",
+  "timer_mode_normal": "Normal mod",
+  "timer_mode_failed": "Görünüm modu değiştirilemedi."
 }

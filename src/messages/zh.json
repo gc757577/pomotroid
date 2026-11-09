@@ -162,5 +162,8 @@
   "widget_position_failed": "无法保存组件位置。",
   "widget_move": "拖动以移动 · 方向键调整",
   "widget_resize": "拖动以调整大小 · 方向键调整",
-  "widget_open_failed": "无法打开桌面组件。"
+  "widget_open_failed": "无法打开桌面组件。",
+  "timer_mode_horizontal": "横向迷你模式",
+  "timer_mode_normal": "普通模式",
+  "timer_mode_failed": "无法切换显示模式。"
 }

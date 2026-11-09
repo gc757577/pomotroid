@@ -3,10 +3,32 @@
   import { getCurrentWebviewWindow, WebviewWindow } from '@tauri-apps/api/webviewWindow';
   import { setWindowVisibility } from '$lib/ipc';
   import { settings } from '$lib/stores/settings';
-  import { isMac } from '$lib/utils/platform';
+  import { isMac, isWindows } from '$lib/utils/platform';
   import Tooltip from './Tooltip.svelte';
   import * as m from '$paraglide/messages.js';
 
+  let {
+    horizontal = false,
+    onToggleMode,
+  }: {
+    horizontal?: boolean;
+    onToggleMode: () => Promise<void>;
+  } = $props();
+  let switching = $state(false);
+  let modeError = $state(false);
+  async function switchMode() {
+    if (switching) return;
+    switching = true;
+    modeError = false;
+    try {
+      await onToggleMode();
+    } catch (error) {
+      console.error('[display-mode]', error);
+      modeError = true;
+    } finally {
+      switching = false;
+    }
+  }
   let maximized = $state(false);
   let suppressTitlebarHover = $state(false);
 
@@ -97,6 +119,7 @@
   }
 
   function toggleMaximize() {
+    if (horizontal || switching) return;
     getCurrentWebviewWindow().toggleMaximize();
   }
 
@@ -108,7 +131,7 @@
 
 {#snippet settingsBtn()}
   <Tooltip text={m.tooltip_settings()}>
-    <button class="btn-icon" onclick={openSettings} aria-label="Settings">
+    <button class="btn-icon" onclick={openSettings} aria-label={m.settings_title()}>
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <line
           x1="2"
@@ -168,7 +191,7 @@
 
 {#snippet statsBtn()}
   <Tooltip text={m.tooltip_statistics()}>
-    <button class="btn-icon" onclick={openStats} aria-label="Statistics">
+    <button class="btn-icon" onclick={openStats} aria-label={m.stats_title()}>
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <rect x="2" y="9" width="3" height="5" rx="0.5" fill="currentColor" opacity="0.6" />
         <rect x="6.5" y="5" width="3" height="9" rx="0.5" fill="currentColor" opacity="0.8" />
@@ -184,6 +207,27 @@
   {#if !isMac}
     {@render settingsBtn()}
     {@render statsBtn()}
+    {#if isWindows}
+      <Tooltip
+        text={modeError
+          ? m.timer_mode_failed()
+          : horizontal
+            ? m.timer_mode_normal()
+            : m.timer_mode_horizontal()}
+        placement="below"
+      >
+        <button
+          class="btn-icon mode"
+          onclick={switchMode}
+          disabled={switching}
+          aria-label={horizontal ? m.timer_mode_normal() : m.timer_mode_horizontal()}
+          aria-pressed={horizontal}
+        >
+          <span class="normal-mode-icon" aria-hidden="true">▼</span>
+          <span class="mini-mode-icon" aria-hidden="true">▲</span>
+        </button>
+      </Tooltip>
+    {/if}
   {/if}
 
   <!-- Right: settings + stats buttons on macOS, window controls on Linux/Windows. -->
@@ -192,7 +236,7 @@
       {@render statsBtn()}
       {@render settingsBtn()}
     {:else}
-      <button class="btn-icon" onclick={minimize} aria-label="Minimize">
+      <button class="btn-icon" onclick={minimize} aria-label={m.common_minimize()}>
         <svg width="12" height="12" viewBox="0 0 12 12">
           <line
             x1="1"
@@ -208,7 +252,8 @@
       <button
         class="btn-icon"
         onclick={toggleMaximize}
-        aria-label={maximized ? 'Restore' : 'Maximize'}
+        disabled={horizontal || switching}
+        aria-label={maximized ? m.common_restore() : m.common_maximize()}
       >
         {#if maximized}
           <svg width="12" height="12" viewBox="0 0 12 12">
@@ -246,11 +291,7 @@
           </svg>
         {/if}
       </button>
-      <button
-        class="btn-icon close"
-        onclick={close}
-        aria-label="Close"
-      >
+      <button class="btn-icon close" onclick={close} aria-label={m.common_close()}>
         <svg width="12" height="12" viewBox="0 0 12 12">
           <line
             x1="1"
@@ -286,6 +327,36 @@
     padding: 0 8px;
     position: relative;
     flex-shrink: 0;
+  }
+
+  .mini-mode-icon {
+    display: none;
+  }
+
+  @media (max-height: 160px) {
+    .titlebar {
+      height: 32px;
+      padding: 0 4px;
+    }
+    .titlebar .controls {
+      gap: 2px;
+    }
+    .normal-mode-icon {
+      display: none;
+    }
+    .mini-mode-icon {
+      display: inline;
+    }
+  }
+
+  .btn-icon:disabled {
+    opacity: 0.3;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .mode {
+    font-size: 10px;
   }
 
   .controls {

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import * as m from '$paraglide/messages.js';
   // Captures a keyboard combination and formats it as a shortcut string
   // matching Rust's parse_shortcut format (e.g. "Control+F1", "Shift+Alt+A").
 
@@ -63,7 +64,7 @@
   class:listening
   readonly
   {value}
-  placeholder="Click and press keys…"
+  placeholder={m.shortcut_placeholder()}
   onfocus={onFocus}
   onblur={onBlur}
   onkeydown={onKeydown}
