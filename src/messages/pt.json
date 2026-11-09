@@ -165,5 +165,6 @@
   "widget_open_failed": "Não foi possível abrir o widget.",
   "timer_mode_horizontal": "Modo mini horizontal",
   "timer_mode_normal": "Modo normal",
-  "timer_mode_failed": "Não foi possível alterar o modo de exibição."
+  "timer_mode_failed": "Não foi possível alterar o modo de exibição.",
+  "about_upstream_source": "Original Pomotroid source · MIT"
 }

@@ -82,6 +82,9 @@ pub fn settings_set(
     ws_state: State<'_, Arc<WsState>>,
     app: AppHandle,
 ) -> Result<Settings, String> {
+    if key == "check_for_updates" && value != "false" {
+        return Err("이 배포 후보에서는 자동 업데이트를 지원하지 않습니다.".into());
+    }
     // Appearance-only writes must not reconfigure the timer or emit timer:reset.
     if key == "widget_enabled" {
         let enabled = value.parse::<bool>().map_err(|_| "위젯 표시 값이 올바르지 않습니다.")?;
@@ -702,72 +705,15 @@ pub struct UpdateInfo {
     pub date: Option<String>,
 }
 
-/// Check whether a newer version is available.
-/// Returns `Some(UpdateInfo)` when an update is available, or `None` when
-/// the running version is already the latest.
-/// Errors (e.g. network failure) are surfaced as a string so the frontend
-/// can display a non-blocking message.
+/// Fork updates remain disabled until a separate distribution channel exists.
 #[tauri::command]
-pub async fn check_update(app: AppHandle) -> Result<Option<UpdateInfo>, String> {
-    ensure_updates_allowed(&app)?;
-    use tauri_plugin_updater::UpdaterExt;
-    log::info!("[updater] checking for updates");
-    let updater = app.updater().map_err(|e| {
-        log::error!("[updater] failed to build updater: {e}");
-        e.to_string()
-    })?;
-    match updater.check().await {
-        Ok(Some(update)) => {
-            log::info!("[updater] update available: v{}", update.version);
-            Ok(Some(UpdateInfo {
-                version: update.version.clone(),
-                body: update.body.clone(),
-                date: update.date.map(|d| d.to_string()),
-            }))
-        }
-        Ok(None) => {
-            log::info!("[updater] already up to date");
-            Ok(None)
-        }
-        Err(e) => {
-            log::warn!("[updater] update check failed: {e}");
-            Err(e.to_string())
-        }
-    }
+pub async fn check_update() -> Result<Option<UpdateInfo>, String> {
+    Err("이 배포 후보에서는 자동 업데이트를 지원하지 않습니다.".into())
 }
 
-/// Download, verify, and install the pending update, then relaunch immediately.
-/// Should only be called after `check_update` has returned `Some(UpdateInfo)`.
 #[tauri::command]
-pub async fn install_update(app: AppHandle) -> Result<(), String> {
-    ensure_updates_allowed(&app)?;
-    use tauri_plugin_updater::UpdaterExt;
-    log::info!("[updater] install requested — checking for update");
-    let updater = app.updater().map_err(|e| {
-        log::error!("[updater] failed to build updater: {e}");
-        e.to_string()
-    })?;
-    let update = updater
-        .check()
-        .await
-        .map_err(|e| {
-            log::error!("[updater] update check failed during install: {e}");
-            e.to_string()
-        })?
-        .ok_or_else(|| {
-            log::warn!("[updater] install_update called but no update is available");
-            "No update available".to_string()
-        })?;
-    log::info!("[updater] downloading and installing v{}", update.version);
-    update
-        .download_and_install(|_, _| {}, || {})
-        .await
-        .map_err(|e| {
-            log::error!("[updater] download/install failed: {e}");
-            e.to_string()
-        })?;
-    log::info!("[updater] install complete — relaunching");
-    app.restart();
+pub async fn install_update() -> Result<(), String> {
+    Err("이 배포 후보에서는 자동 업데이트를 지원하지 않습니다.".into())
 }
 
 /// Change only the timer's native opacity; never persist a preview.
@@ -775,13 +721,6 @@ pub async fn install_update(app: AppHandle) -> Result<(), String> {
 pub fn window_preview_opacity(percent: u32, app: AppHandle) -> Result<(), String> {
     let window = app.get_webview_window("main").ok_or("타이머 창을 찾을 수 없습니다.")?;
     crate::window_opacity::apply(&window, percent)
-}
-
-fn ensure_updates_allowed(app: &AppHandle) -> Result<(), String> {
-    if cfg!(debug_assertions) || app.config().identifier == "io.github.gc75.pomotroidfork.dev" {
-        return Err("개발용 앱에서는 업데이트 확인과 설치가 비활성화되어 있습니다.".into());
-    }
-    Ok(())
 }
 
 fn cue_to_stem(cue: &str) -> Result<&'static str, String> {
@@ -842,6 +781,12 @@ pub async fn widget_action(webview: tauri::Webview, action: String, generation: 
 
 #[cfg(test)]
 mod tests {
+    #[tokio::test]
+    async fn fork_update_commands_are_disabled_without_app_or_network() {
+        assert!(super::check_update().await.is_err());
+        assert!(super::install_update().await.is_err());
+    }
+
     use rusqlite::Connection;
     use crate::db::migrations;
 

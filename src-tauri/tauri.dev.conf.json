@@ -2,11 +2,6 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Pomotroid Fork Dev",
   "identifier": "io.github.gc75.pomotroidfork.dev",
-  "plugins": {
-    "updater": {
-      "endpoints": []
-    }
-  },
   "bundle": {
     "active": false
   }

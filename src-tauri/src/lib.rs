@@ -42,10 +42,14 @@ use commands::{
 pub fn run() {
     let context = tauri::generate_context!();
     // Refuse unsafe debug launches before plugins can create logs or open data.
-    #[cfg(debug_assertions)]
+    let expected_identifier = if cfg!(debug_assertions) {
+        "io.github.gc75.pomotroidfork.dev"
+    } else {
+        "io.github.gc75.pomotroidfork.preview"
+    };
     assert_eq!(
         context.config().identifier,
-        "io.github.gc75.pomotroidfork.dev",
+        expected_identifier,
         "Use `npm run desktop:dev` to keep development data separate from Pomotroid"
     );
 
@@ -62,7 +66,6 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
         .on_window_event(|window, event| {
             // Closing a webview does not guarantee Svelte onDestroy will run.
             // Discard an unfinished preview when the settings window is gone.
@@ -120,9 +123,8 @@ pub fn run() {
             {
                 let conn = db.lock().unwrap();
                 settings::seed_defaults(&conn).expect("failed to seed default settings");
-                #[cfg(debug_assertions)]
                 settings::save_setting(&conn, "check_for_updates", "false")
-                    .expect("failed to disable development updates");
+                    .expect("failed to disable fork updates");
             }
             app.manage(db.clone());
 

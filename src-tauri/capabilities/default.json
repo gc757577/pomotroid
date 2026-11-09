@@ -2,7 +2,11 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["main", "settings", "stats"],
+  "windows": [
+    "main",
+    "settings",
+    "stats"
+  ],
   "permissions": [
     "core:default",
     "log:default",
@@ -24,7 +28,6 @@
     "notification:allow-is-permission-granted",
     "notification:allow-request-permission",
     "notification:allow-show",
-    "notification:allow-notify",
-    "updater:default"
+    "notification:allow-notify"
   ]
 }

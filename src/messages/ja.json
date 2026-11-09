@@ -165,5 +165,6 @@
   "widget_open_failed": "ウィジェットを開けませんでした。",
   "timer_mode_horizontal": "横長ミニモード",
   "timer_mode_normal": "通常モード",
-  "timer_mode_failed": "表示モードを変更できませんでした。"
+  "timer_mode_failed": "表示モードを変更できませんでした。",
+  "about_upstream_source": "Original Pomotroid source · MIT"
 }

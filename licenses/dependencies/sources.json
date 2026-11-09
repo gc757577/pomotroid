@@ -1,0 +1,14 @@
+{
+  "alloc-stdlib": "https://raw.githubusercontent.com/dropbox/rust-alloc-no-stdlib/master/LICENSE",
+  "dasp_sample": "https://raw.githubusercontent.com/RustAudio/dasp/master/LICENSE-MIT",
+  "mpl-2.0": "https://raw.githubusercontent.com/pdeljanov/Symphonia/v0.5.5/LICENSE",
+  "tauri": "https://raw.githubusercontent.com/tauri-apps/tauri/tauri-v2.11.2/LICENSE_MIT",
+  "unic": "https://raw.githubusercontent.com/open-i18n/rust-unic/master/LICENSE-MIT",
+  "webview2": "https://raw.githubusercontent.com/wravery/webview2-rs/main/LICENSE",
+  "polka": "https://raw.githubusercontent.com/lukeed/polka/master/license",
+  "rolldown": "https://raw.githubusercontent.com/rolldown/rolldown/v1.0.3/LICENSE",
+  "sirv": "https://raw.githubusercontent.com/lukeed/sirv/master/license",
+  "sqlite-wasm": "https://raw.githubusercontent.com/sqlite/sqlite-wasm/main/LICENSE.md",
+  "is-reference": "https://raw.githubusercontent.com/Rich-Harris/is-reference/master/README.md",
+  "locate-character": "https://raw.githubusercontent.com/Rich-Harris/locate-character/master/README.md"
+}

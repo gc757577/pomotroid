@@ -106,9 +106,9 @@
   "about_open_log_folder": "Open Log Folder",
   "about_reset_all": "Reset All Settings",
   "about_reset_confirm": "This will reset all settings to defaults.",
-  "about_update_checking": "Checking for updates\u2026",
+  "about_update_checking": "Checking for updates…",
   "about_update_up_to_date": "Up to date",
-  "about_update_install": "Install v{version} \u2014 app will restart",
+  "about_update_install": "Install v{version} — app will restart",
   "about_update_error": "Could not check for updates",
   "stats_title": "Statistics",
   "stats_tab_today": "Today",
@@ -198,5 +198,6 @@
   "stats_hour_18": "6p",
   "timer_mode_horizontal": "Horizontal mini mode",
   "timer_mode_normal": "Normal mode",
-  "timer_mode_failed": "Could not change display mode."
+  "timer_mode_failed": "Could not change display mode.",
+  "about_upstream_source": "Original Pomotroid source · MIT"
 }

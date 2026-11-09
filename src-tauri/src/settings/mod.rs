@@ -127,7 +127,7 @@ impl Default for Settings {
             websocket_port: 1314,
             language: "auto".to_string(),
             verbose_logging: false,
-            check_for_updates: true,
+            check_for_updates: false,
             global_shortcuts_enabled: false,
             local_shortcut_toggle: " ".to_string(),
             local_shortcut_reset: "ArrowLeft".to_string(),
@@ -266,7 +266,7 @@ pub fn load(conn: &Connection) -> Result<Settings> {
         websocket_port: parse_u32(&map, "websocket_port", d.websocket_port as u32) as u16,
         language: map.get("language").cloned().unwrap_or(d.language),
         verbose_logging: parse_bool(&map, "verbose_logging", d.verbose_logging),
-        check_for_updates: parse_bool(&map, "check_for_updates", d.check_for_updates),
+        check_for_updates: false,
         global_shortcuts_enabled: parse_bool(&map, "global_shortcuts_enabled", d.global_shortcuts_enabled),
         local_shortcut_toggle: map.get("local_shortcut_toggle").cloned().unwrap_or(d.local_shortcut_toggle),
         local_shortcut_reset: map.get("local_shortcut_reset").cloned().unwrap_or(d.local_shortcut_reset),
@@ -330,6 +330,15 @@ fn parse_opt_u32(map: &HashMap<String, String>, key: &str) -> Option<u32> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn legacy_update_setting_cannot_enable_fork_updates() {
+        let conn = setup();
+        seed_defaults(&conn).unwrap();
+        assert!(!load(&conn).unwrap().check_for_updates);
+        save_setting(&conn, "check_for_updates", "true").unwrap();
+        assert!(!load(&conn).unwrap().check_for_updates);
+    }
+
     use super::*;
     use crate::db::migrations;
 

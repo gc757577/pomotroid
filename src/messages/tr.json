@@ -165,5 +165,6 @@
   "widget_open_failed": "Masaüstü aracı açılamadı.",
   "timer_mode_horizontal": "Yatay mini mod",
   "timer_mode_normal": "Normal mod",
-  "timer_mode_failed": "Görünüm modu değiştirilemedi."
+  "timer_mode_failed": "Görünüm modu değiştirilemedi.",
+  "about_upstream_source": "Original Pomotroid source · MIT"
 }

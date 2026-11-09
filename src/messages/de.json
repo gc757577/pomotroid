@@ -165,5 +165,6 @@
   "widget_open_failed": "Desktop-Widget konnte nicht geöffnet werden.",
   "timer_mode_horizontal": "Horizontaler Minimodus",
   "timer_mode_normal": "Standardmodus",
-  "timer_mode_failed": "Anzeigemodus konnte nicht geändert werden."
+  "timer_mode_failed": "Anzeigemodus konnte nicht geändert werden.",
+  "about_upstream_source": "Original Pomotroid source · MIT"
 }

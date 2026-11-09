@@ -198,5 +198,6 @@
   "stats_hour_18": "18시",
   "timer_mode_horizontal": "가로 미니 모드",
   "timer_mode_normal": "기본 모드",
-  "timer_mode_failed": "표시 모드를 변경하지 못했습니다."
+  "timer_mode_failed": "표시 모드를 변경하지 못했습니다.",
+  "about_upstream_source": "원본 Pomotroid 소스 코드 · MIT"
 }

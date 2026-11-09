@@ -1,5 +1,6 @@
 import { overwriteGetLocale, baseLocale, locales } from '$paraglide/runtime.js';
 import { resolveLocale } from '$lib/utils/locale';
+import { getName } from '@tauri-apps/api/app';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import * as m from '$paraglide/messages.js';
@@ -29,8 +30,11 @@ export function setLocale(language: string): void {
   const window = getCurrentWindow();
   const title = window.label === 'settings' ? m.settings_title() : window.label === 'stats' ? m.stats_title() : null;
   if (title) {
-    document.title = `Pomotroid — ${title}`;
-    void window.setTitle(document.title).catch(error => console.error('[locale] window title', error));
+    void getName().then(name => {
+      const currentTitle = window.label === 'settings' ? m.settings_title() : m.stats_title();
+      document.title = `${name} — ${currentTitle}`;
+      return window.setTitle(document.title);
+    }).catch(error => console.error('[locale] window title', error));
   }
   void invoke('tray_set_labels', { labels: {
     start: m.tray_start(), pause: m.tray_pause(), resume: m.tray_resume(),

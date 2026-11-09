@@ -1,9 +1,10 @@
 [package]
 name = "pomotroid"
-version = "1.7.1"
+version = "0.1.0-rc.1"
 description = "A simple and visually-pleasing Pomodoro timer"
 authors = ["Christopher Murphy <flyweight@pm.me>"]
 edition = "2021"
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -25,7 +26,6 @@ log = "0.4"
 tauri-plugin-notification = "2"
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-dialog = "2"
-tauri-plugin-updater = "2"
 
 rusqlite = { version = "0.40", features = ["bundled"] }
 

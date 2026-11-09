@@ -165,5 +165,6 @@
   "widget_open_failed": "无法打开桌面组件。",
   "timer_mode_horizontal": "横向迷你模式",
   "timer_mode_normal": "普通模式",
-  "timer_mode_failed": "无法切换显示模式。"
+  "timer_mode_failed": "无法切换显示模式。",
+  "about_upstream_source": "Original Pomotroid source · MIT"
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getName } from '@tauri-apps/api/app';
   import { onMount } from 'svelte';
   import { getCurrentWebviewWindow, WebviewWindow } from '@tauri-apps/api/webviewWindow';
   import { setWindowVisibility } from '$lib/ipc';
@@ -74,7 +75,7 @@
     }
     new WebviewWindow('settings', {
       url: '/settings',
-      title: 'Pomotroid — Settings',
+      title: `${await getName()} — ${m.settings_title()}`,
       width: 720,
       height: 520,
       // On macOS: native decorations + overlay titlebar for rounded corners and
@@ -97,7 +98,7 @@
     }
     new WebviewWindow('stats', {
       url: '/stats',
-      title: 'Pomotroid — Statistics',
+      title: `${await getName()} — ${m.stats_title()}`,
       width: 840,
       height: 520,
       decorations: isMac,

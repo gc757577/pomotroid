@@ -1,6 +1,6 @@
 {
   "name": "pomotroid",
-  "version": "1.7.1",
+  "version": "0.1.0-rc.1",
   "description": "A simple and visually-pleasing Pomodoro timer",
   "author": {
     "email": "flyweight@pm.me",
@@ -20,7 +20,9 @@
     "check": "npm run paraglide:compile && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "npm run paraglide:compile && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "format": "prettier --write .",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "desktop:build:preview": "tauri build --bundles nsis",
+    "release:licenses": "python scripts/generate-release-notices.py"
   },
   "dependencies": {
     "@inlang/paraglide-js": "^2.19.0",

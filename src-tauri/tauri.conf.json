@@ -1,18 +1,18 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Pomotroid",
-  "version": "1.7.1",
-  "identifier": "com.splode.pomotroid",
+  "productName": "Pomotroid Fork Preview",
+  "version": "0.1.0-rc.1",
+  "identifier": "io.github.gc75.pomotroidfork.preview",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build",
+    "beforeBuildCommand": "npm run release:licenses && npm run build",
     "frontendDist": "../build"
   },
   "app": {
     "windows": [
       {
-        "title": "Pomotroid",
+        "title": "Pomotroid Fork Preview",
         "width": 360,
         "height": 478,
         "minWidth": 240,
@@ -29,17 +29,12 @@
       "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; media-src 'self'"
     }
   },
-  "plugins": {
-    "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDdDMTE5MDhGMEMyMDNDNjYKUldSbVBDQU1qNUFSZkc4SXhsOGx6Q1d6UkNPbHlBTUU3Qzhlb0cwa2pZZjk0S1RxNVUweS9YNlQK",
-      "endpoints": [
-        "https://raw.githubusercontent.com/Splode/pomotroid/main/latest.json"
-      ]
-    }
-  },
+  "plugins": {},
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": [
+      "nsis"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/64x64.png",
@@ -89,12 +84,25 @@
       "nsis": {
         "displayLanguageSelector": false,
         "installerIcon": "icons/icon.ico",
-        "headerImage": "icons/128x128.png",
-        "installMode": "perMachine"
+        "headerImage": null,
+        "installMode": "currentUser",
+        "languages": [
+          "Korean",
+          "English"
+        ],
+        "startMenuFolder": "Pomotroid Fork Preview"
       },
       "wix": {
         "language": "en-US"
       }
-    }
-  }
+    },
+    "publisher": "Pomotroid Fork",
+    "license": "MIT",
+    "licenseFile": "../LICENSE",
+    "resources": {
+      "target/preview-resources/": "licenses/"
+    },
+    "useLocalToolsDir": true
+  },
+  "mainBinaryName": "pomotroid-fork-preview"
 }
