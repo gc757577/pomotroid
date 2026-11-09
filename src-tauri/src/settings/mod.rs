@@ -343,6 +343,46 @@ fn parse_opt_u32(map: &HashMap<String, String>, key: &str) -> Option<u32> {
 #[cfg(test)]
 mod tests {
     #[test]
+    fn preview_upgrade_adds_defaults_without_replacing_settings_or_study_records() {
+        let path = std::env::temp_dir().join(format!("pomotroid-preview-upgrade-{}-{}.db",
+            std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        {
+            let conn = Connection::open(&path).unwrap();
+            migrations::run(&conn).unwrap();
+            // Representative rc.1 data, before the three new setting keys exist.
+            for (key, value) in [("language", "ko"), ("time_work_secs", "2700"),
+                ("timer_opacity_percent", "70"), ("hover_opacity_enabled", "true"),
+                ("hover_opacity_percent", "20"), ("widget_enabled", "true"),
+                ("widget_x", "150"), ("widget_y", "210"), ("widget_width", "680"),
+                ("widget_height", "350")] {
+                save_setting(&conn, key, value).unwrap();
+            }
+            conn.execute("INSERT INTO sessions (started_at, ended_at, round_type, duration_secs, completed) VALUES (1000, 3700, 'work', 2700, 1)", []).unwrap();
+        }
+        {
+            let conn = Connection::open(&path).unwrap();
+            migrations::run(&conn).unwrap();
+            seed_defaults(&conn).unwrap();
+            seed_defaults(&conn).unwrap();
+            let saved = load(&conn).unwrap();
+            assert_eq!(saved.language, "ko");
+            assert_eq!(saved.time_work_secs, 2700);
+            assert_eq!((saved.timer_opacity_percent, saved.hover_opacity_enabled, saved.hover_opacity_percent), (70, true, 20));
+            assert!(saved.widget_enabled);
+            assert_eq!((saved.widget_x, saved.widget_y, saved.widget_width, saved.widget_height), (Some(150), Some(210), 680, 350));
+            assert_eq!(saved.widget_opacity_percent, 100);
+            assert!(!saved.autostart_enabled);
+            assert!(saved.autostart_start_hidden);
+            let row: (i64, i64, String, u32, bool) = conn.query_row(
+                "SELECT started_at, ended_at, round_type, duration_secs, completed FROM sessions", [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))).unwrap();
+            assert_eq!(row, (1000, 3700, "work".into(), 2700, true));
+            assert_eq!(conn.query_row("SELECT COUNT(*) FROM sessions", [], |r| r.get::<_, i64>(0)).unwrap(), 1);
+        }
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
     fn autostart_defaults_off_tray_mode_and_mode_survives_seeding() {
         let conn = setup();
         seed_defaults(&conn).unwrap();
