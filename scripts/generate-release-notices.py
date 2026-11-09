@@ -28,6 +28,7 @@ def main():
     # Only deterministic generated files are overwritten; never read AppData.
     shutil.copyfile(ROOT / "LICENSE", OUT / "LICENSE.txt")
     shutil.copytree(ROOT / "licenses/fonts", OUT / "fonts", dirs_exist_ok=True)
+    shutil.copytree(ROOT / "licenses/installer", OUT / "installer", dirs_exist_ok=True)
     metadata = json.loads(subprocess.check_output([
         "cargo", "metadata", "--manifest-path", str(ROOT / "src-tauri/Cargo.toml"),
         "--format-version", "1", "--locked", "--offline",
@@ -114,6 +115,7 @@ def main():
         "Original Pomotroid: Copyright (c) 2018 Christopher Murphy. MIT.\n"
         "The unchanged project license is LICENSE.txt.\n"
         "Bundled Mona Sans fonts: see fonts/.\n"
+        "NSIS and its Tauri utility plugin: see installer/.\n"
         "Windows Cargo production/build dependencies and installed npm build tools follow.\n"
         "Corresponding MPL-only Rust crate sources are included as source-*.zip.\n"
         "Package registries/source repositories above provide other source code.\n" + "".join(notices), encoding="utf-8")

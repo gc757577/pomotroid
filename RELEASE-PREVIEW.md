@@ -46,6 +46,7 @@ npm run desktop:build:preview
 
 1. 위 설치 파일을 더블 클릭하고 **Pomotroid Fork Preview**인지 확인한다.
 2. 사용권 고지에 동의하고 설치한다. 원본 Pomotroid를 제거하거나 개발 폴더를 선택할 필요가 없다.
+   기본 설치 폴더는 `%LOCALAPPDATA%\Pomotroid Fork Preview`이다.
 3. 설치 완료 후 시작 메뉴에서 **Pomotroid Fork Preview**를 검색해 실행한다.
 4. 첫 실행 기록은 비어 있다. 설정 → 시스템에서 한국어를 선택할 수 있다.
 5. 트레이 관련 옵션을 사용하지 않으면 창의 X로 종료한다. 트레이로 숨기기를 켰다면 알림 영역의 Preview 아이콘을 오른쪽 클릭해 **종료**를 선택한다. 숨겨진 아이콘은 작업 표시줄의 ∧ 안에 있을 수 있다. 이때 바탕화면 위젯도 함께 사라져야 한다.
@@ -53,7 +54,7 @@ npm run desktop:build:preview
 
 ## 포함한 고지와 공개 전 점검
 
-설치 폴더 `licenses`에 원본 MIT 전문·저작권 고지, Mona Sans OFL 및 폰트 저작권, Windows Cargo 의존성·설치된 npm 빌드 도구 고지/목록을 포함한다. MPL 전용 Rust 의존성은 해당 버전 소스 ZIP도 함께 제공한다. 원본 About 소스 링크는 원본 프로젝트임을 명시한다.
+설치 폴더 `licenses`에 원본 MIT 전문·저작권 고지, Mona Sans OFL 및 폰트 저작권, Windows Cargo 의존성·설치된 npm 빌드 도구 고지/목록, NSIS 3.11 및 Tauri NSIS 플러그인 고지를 포함한다. MPL 전용 Rust 의존성은 해당 버전 소스 ZIP도 함께 제공한다. 원본 About 소스 링크는 원본 프로젝트임을 명시한다.
 
 - [ ] 이 설치 파일로 신규 설치·실행·완전 종료·재실행·제거 확인
 - [ ] 원본·개발 앱과 동시에 설치 가능한지, 각 앱의 기록·설정이 분리되는지 확인
