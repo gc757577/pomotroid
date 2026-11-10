@@ -266,6 +266,8 @@ mod tests {
         let engine = auto_launch::AutoLaunchBuilder::new().set_app_name(&name)
             .set_app_path(&exe.display().to_string()).set_args(&[LOGIN_ARG]).build().unwrap();
         engine.enable().unwrap();
+        // Re-enabling uses the same value name instead of adding a second item.
+        engine.enable().unwrap();
         RegKey::predef(HKEY_CURRENT_USER).open_subkey_with_flags(windows::RUN, winreg::enums::KEY_WRITE).unwrap()
             .set_value(&name, &windows::command(&exe)).unwrap();
         assert!(engine.is_enabled().unwrap());

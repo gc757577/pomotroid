@@ -33,5 +33,9 @@ Tauri MIT 전문은 `licenses/installer/tauri-template-LICENSE.txt`에 보존하
 - PNG RGBA/모서리 투명·ICO 다중 해상도, 트레이의 라운드 색상/남은·경과 진행률/일시정지, 기존 공부 기록 보존 회귀 검사 통과.
 - Windows용 테스트 실행 파일의 ProductName/FileDescription이 ClearPomo로 생성됨을 확인했다.
 - 바로가기 보조 함수는 대체한 최소 NSIS 스크립트로 훅의 전처리 구문을 확인했다. 실제 바로가기/레지스트리는 조작하지 않았다.
-- 이번에는 설치 파일을 만들거나 실행하지 않았다. 실제 Preview → ClearPomo 업데이트, 설치/제거 키·바로가기/고정 아이콘 갱신, 자동 실행 유지 및 Windows 로그인은 다음 설치 파일에서 수동 확인해야 한다.
+- 이름·아이콘 적용 단계에서는 설치 파일을 만들거나 실행하지 않았다. 실제 Preview → ClearPomo 업데이트, 설치/제거 키·바로가기/고정 아이콘 갱신, 자동 실행 유지 및 Windows 로그인은 다음 설치 파일에서 수동 확인해야 한다.
 - 설치된 Preview rc.2의 로그인 자동 실행을 사용자가 확인한 기존 결과는 유지한다. ClearPomo 이름으로 설치된 앱의 확인 결과로 확대하지 않는다.
+
+## rc.3 설치 파일
+
+후속 배포 준비에서 ClearPomo 0.1.0-rc.3 설치 파일을 만든다. 실제 설치는 수행하지 않으며, 최신 업데이트 절차와 확인 대기는 프로젝트 루트 RELEASE-CLEARPOMO.md를 따른다.
