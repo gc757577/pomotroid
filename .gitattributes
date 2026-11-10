@@ -1,0 +1,2 @@
+# Tauri CLI rewrites this manifest using LF; avoid false dirty build metadata.
+src-tauri/Cargo.toml text eol=lf
