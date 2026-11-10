@@ -327,24 +327,35 @@ pub fn settings_reset_defaults(
     db: State<'_, DbState>,
     timer: State<'_, TimerController>,
     tray_state: State<'_, Arc<TrayState>>,
+    ws_state: State<'_, Arc<WsState>>,
     app: AppHandle,
 ) -> Result<Settings, String> {
     log::info!("[settings] reset to defaults");
     let new_settings = {
         let mut conn = db.lock().map_err(|e| e.to_string())?;
         crate::startup::disable_for_reset(&app, &mut conn)?;
-        // Delete all rows so seed_defaults can insert fresh defaults.
-        conn.execute("DELETE FROM settings", [])
-            .map_err(|e| e.to_string())?;
-        settings::seed_defaults(&conn).map_err(|e| e.to_string())?;
+        settings::reset_defaults(&conn).map_err(|e| e.to_string())?;
         settings::load(&conn).map_err(|e| e.to_string())?
     };
+
+    log::set_max_level(if new_settings.verbose_logging { LevelFilter::Debug } else { LevelFilter::Info });
+    let ws = Arc::clone(&*ws_state);
+    let app_clone = app.clone();
+    let port = new_settings.websocket_port;
+    let enabled = new_settings.websocket_enabled;
+    tauri::async_runtime::spawn(async move {
+        websocket::stop(&ws).await;
+        if enabled { websocket::start(port, app_clone, &ws).await; }
+    });
 
     timer.apply_settings(new_settings.clone());
     *tray_state.countdown_mode.lock().unwrap() = new_settings.dial_countdown;
 
     if let Some(window) = app.get_webview_window("main") {
         crate::window_opacity::configure(&window, &new_settings)?;
+        let is_break = timer.get_snapshot().round_type != "work";
+        window.set_always_on_top(new_settings.always_on_top
+            && !(new_settings.break_always_on_top && is_break)).map_err(|e| e.to_string())?;
     }
     #[cfg(target_os = "windows")]
     crate::desktop_widget::configure(&new_settings)?;
@@ -358,9 +369,19 @@ pub fn settings_reset_defaults(
         }
     }
 
-    // After reset, defaults have tray_icon_enabled=false and min_to_tray=false,
-    // so destroy any active tray icon.
-    if !crate::startup::tray_required(&app) { tray::destroy_tray(&tray_state); }
+    // Reset must synchronize the live tray with the restored defaults too.
+    if new_settings.tray_icon_enabled || new_settings.min_to_tray || crate::startup::tray_required(&app) {
+        #[cfg(target_os = "linux")]
+        {
+            let app_handle = app.clone();
+            let ts = Arc::clone(&tray_state);
+            std::thread::spawn(move || tray::create_tray(&app_handle, &ts));
+        }
+        #[cfg(not(target_os = "linux"))]
+        tray::create_tray(&app, &tray_state);
+    } else {
+        tray::destroy_tray(&tray_state);
+    }
 
     let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
 

@@ -84,21 +84,21 @@ impl Default for Settings {
             autostart_enabled: false,
             autostart_start_hidden: true,
             widget_enabled: false,
-            widget_opacity_percent: 100,
+            widget_opacity_percent: 67,
             widget_x: None,
             widget_y: None,
             widget_width: 760,
             widget_height: 320,
-            timer_opacity_percent: 100,
-            hover_opacity_enabled: false,
-            hover_opacity_percent: 100,
-            always_on_top: false,
+            timer_opacity_percent: 54,
+            hover_opacity_enabled: true,
+            hover_opacity_percent: 80,
+            always_on_top: true,
             break_always_on_top: false,
             auto_start_work: true,
             auto_start_break: true,
-            tray_icon_enabled: false,
+            tray_icon_enabled: true,
             min_to_tray: false,
-            min_to_tray_on_close: false,
+            min_to_tray_on_close: true,
             notifications_enabled: false,
             long_break_interval: 4,
             short_breaks_enabled: true,
@@ -187,6 +187,14 @@ pub fn seed_defaults(conn: &Connection) -> Result<()> {
     }
     log::debug!("[settings] defaults seeded");
     Ok(())
+}
+
+/// Reset preferences atomically without deleting study sessions.
+pub fn reset_defaults(conn: &Connection) -> Result<()> {
+    let tx = conn.unchecked_transaction()?;
+    tx.execute("DELETE FROM settings", [])?;
+    seed_defaults(&tx)?;
+    tx.commit()
 }
 
 /// Load all settings from the database. Falls back to `Settings::default()`
@@ -342,6 +350,76 @@ fn parse_opt_u32(map: &HashMap<String, String>, key: &str) -> Option<u32> {
 
 #[cfg(test)]
 mod tests {
+    // File-backed fixture only: never opens a user's Preview or original DB.
+    #[test]
+    fn rc4_fresh_defaults_upgrade_and_reset_preserve_study_records() {
+        let path = std::env::temp_dir().join(format!("clearpomo-defaults-{}-{}.db",
+            std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        let requested = [
+            ("widget_enabled", "false"), ("widget_opacity_percent", "67"),
+            ("timer_opacity_percent", "54"), ("hover_opacity_enabled", "true"),
+            ("hover_opacity_percent", "80"), ("autostart_enabled", "false"),
+            ("websocket_enabled", "false"), ("language", "auto"),
+            ("verbose_logging", "false"), ("tray_icon_enabled", "true"),
+            ("min_to_tray", "false"), ("min_to_tray_on_close", "true"),
+            ("always_on_top", "true"), ("break_always_on_top", "false"),
+        ];
+        let mut custom = Vec::new();
+        {
+            let conn = Connection::open(&path).unwrap();
+            migrations::run(&conn).unwrap();
+            seed_defaults(&conn).unwrap();
+            for (key, expected) in requested {
+                assert_eq!(get_setting(&conn, key).as_deref(), Some(expected), "fresh: {key}");
+                // Give every specified key a nondefault user value.
+                let value = match expected {
+                    "true" => "false", "false" => "true", "auto" => "ko", _ => "93",
+                };
+                custom.push((key, value));
+            }
+            assert_eq!(load(&conn).unwrap(), Settings::default(), "DB and typed defaults must agree");
+            for (key, value) in &custom { save_setting(&conn, key, value).unwrap(); }
+            save_setting(&conn, "time_work_secs", "2345").unwrap();
+            save_setting(&conn, "window_x", "123").unwrap();
+            save_setting(&conn, "future_setting", "keep").unwrap();
+            // An absent preference receives only its new default on upgrade.
+            conn.execute("DELETE FROM settings WHERE key = 'widget_opacity_percent'", []).unwrap();
+            conn.execute("INSERT INTO sessions (started_at, ended_at, round_type, duration_secs, completed) VALUES (1000, 2500, 'work', 1500, 1)", []).unwrap();
+        }
+        {
+            let conn = Connection::open(&path).unwrap();
+            migrations::run(&conn).unwrap();
+            seed_defaults(&conn).unwrap();
+            seed_defaults(&conn).unwrap();
+            for (key, value) in &custom {
+                let expected = if *key == "widget_opacity_percent" { "67" } else { value };
+                assert_eq!(get_setting(&conn, key).as_deref(), Some(expected), "upgrade: {key}");
+            }
+            assert_eq!(load(&conn).unwrap().time_work_secs, 2345);
+            assert_eq!(load(&conn).unwrap().window_x, Some(123));
+            assert_eq!(get_setting(&conn, "future_setting").as_deref(), Some("keep"));
+            let sessions = |conn: &Connection| -> (i64, i64, String, u32, bool) {
+                conn.query_row("SELECT started_at, ended_at, round_type, duration_secs, completed FROM sessions", [],
+                    |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))).unwrap()
+            };
+            assert_eq!(sessions(&conn), (1000, 2500, "work".into(), 1500, true));
+            reset_defaults(&conn).unwrap();
+            for (key, expected) in requested {
+                assert_eq!(get_setting(&conn, key).as_deref(), Some(expected), "reset: {key}");
+            }
+            assert_eq!(load(&conn).unwrap(), Settings::default());
+            assert_eq!(sessions(&conn), (1000, 2500, "work".into(), 1500, true));
+            assert_eq!(conn.query_row("SELECT COUNT(*) FROM sessions", [], |r| r.get::<_, i64>(0)).unwrap(), 1);
+        }
+        {
+            let conn = Connection::open(&path).unwrap();
+            migrations::run(&conn).unwrap();
+            seed_defaults(&conn).unwrap();
+            assert_eq!(load(&conn).unwrap(), Settings::default(), "reset survives restart");
+        }
+        std::fs::remove_file(path).unwrap();
+    }
+
     #[test]
     fn preview_upgrade_adds_defaults_without_replacing_settings_or_study_records() {
         let path = std::env::temp_dir().join(format!("pomotroid-preview-upgrade-{}-{}.db",
@@ -370,7 +448,7 @@ mod tests {
             assert_eq!((saved.timer_opacity_percent, saved.hover_opacity_enabled, saved.hover_opacity_percent), (70, true, 20));
             assert!(saved.widget_enabled);
             assert_eq!((saved.widget_x, saved.widget_y, saved.widget_width, saved.widget_height), (Some(150), Some(210), 680, 350));
-            assert_eq!(saved.widget_opacity_percent, 100);
+            assert_eq!(saved.widget_opacity_percent, 67);
             assert!(!saved.autostart_enabled);
             assert!(saved.autostart_start_hidden);
             let row: (i64, i64, String, u32, bool) = conn.query_row(
@@ -405,7 +483,7 @@ mod tests {
             let conn = Connection::open(&path).unwrap();
             migrations::run(&conn).unwrap();
             seed_defaults(&conn).unwrap();
-            assert_eq!(load(&conn).unwrap().widget_opacity_percent, 100);
+            assert_eq!(load(&conn).unwrap().widget_opacity_percent, 67);
             save_setting(&conn, "timer_opacity_percent", "40").unwrap();
             save_setting(&conn, "widget_x", "150").unwrap();
             save_setting(&conn, "widget_width", "680").unwrap();
@@ -419,7 +497,7 @@ mod tests {
             }
             for invalid in ["0", "19", "101", "-1", "NaN"] {
                 save_setting(&conn, "widget_opacity_percent", invalid).unwrap();
-                assert_eq!(load(&conn).unwrap().widget_opacity_percent, 100);
+                assert_eq!(load(&conn).unwrap().widget_opacity_percent, 67);
             }
             save_setting(&conn, "widget_opacity_percent", "70").unwrap();
         }
@@ -458,7 +536,7 @@ mod tests {
         seed_defaults(&conn).unwrap();
         let s = load(&conn).unwrap();
 
-        assert_eq!(s.timer_opacity_percent, 100);
+        assert_eq!(s.timer_opacity_percent, 54);
 
         assert_eq!(s.time_work_secs, 25 * 60);
         assert_eq!(s.time_short_break_secs, 5 * 60);
@@ -479,7 +557,7 @@ mod tests {
             assert_eq!(s.shortcut_skip, "Control+F3");
             assert_eq!(s.shortcut_restart, "Control+F4");
         }
-        assert!(!s.always_on_top);
+        assert!(s.always_on_top);
         assert!(!s.websocket_enabled);
         assert_eq!(s.websocket_port, 1314);
         assert_eq!(s.theme_mode, "auto");
@@ -509,7 +587,7 @@ mod tests {
         }
         for value in ["0", "19", "101", "-1", "NaN", "50.5"] {
             save_setting(&conn, "timer_opacity_percent", value).unwrap();
-            assert_eq!(load(&conn).unwrap().timer_opacity_percent, 100);
+            assert_eq!(load(&conn).unwrap().timer_opacity_percent, 54);
         }
         save_setting(&conn, "timer_opacity_percent", "40").unwrap();
         seed_defaults(&conn).unwrap();
@@ -521,8 +599,8 @@ mod tests {
         let conn = setup();
         seed_defaults(&conn).unwrap();
         let initial = load(&conn).unwrap();
-        assert!(!initial.hover_opacity_enabled);
-        assert_eq!(initial.hover_opacity_percent, 100);
+        assert!(initial.hover_opacity_enabled);
+        assert_eq!(initial.hover_opacity_percent, 80);
         save_setting(&conn, "timer_opacity_percent", "90").unwrap();
         save_setting(&conn, "hover_opacity_percent", "20").unwrap();
         save_setting(&conn, "hover_opacity_enabled", "true").unwrap();
@@ -538,7 +616,7 @@ mod tests {
         assert!(!disabled.hover_opacity_enabled);
         for invalid in ["0", "19", "101", "-1", "NaN"] {
             save_setting(&conn, "hover_opacity_percent", invalid).unwrap();
-            assert_eq!(load(&conn).unwrap().hover_opacity_percent, 100);
+            assert_eq!(load(&conn).unwrap().hover_opacity_percent, 80);
         }
     }
 
@@ -547,10 +625,10 @@ mod tests {
         let conn = setup();
         seed_defaults(&conn).unwrap();
         // Second seed must not overwrite existing values.
-        save_setting(&conn, "always_on_top", "true").unwrap();
+        save_setting(&conn, "always_on_top", "false").unwrap();
         seed_defaults(&conn).unwrap();
         let s = load(&conn).unwrap();
-        assert!(s.always_on_top, "seed_defaults must not overwrite saved value");
+        assert!(!s.always_on_top, "seed_defaults must not overwrite saved value");
     }
 
     #[test]
@@ -605,11 +683,10 @@ mod tests {
         save_setting(&conn, "time_work_secs", "2700").unwrap();
         save_setting(&conn, "time_short_break_secs", "600").unwrap();
         save_setting(&conn, "work_rounds", "8").unwrap();
-        save_setting(&conn, "always_on_top", "true").unwrap();
+        save_setting(&conn, "always_on_top", "false").unwrap();
 
-        // Simulate the reset_defaults command: wipe all rows then re-seed.
-        conn.execute("DELETE FROM settings", []).unwrap();
-        seed_defaults(&conn).unwrap();
+        // Exercise the same database reset used by the command.
+        reset_defaults(&conn).unwrap();
 
         let s = load(&conn).unwrap();
         // Timer settings must be restored to defaults.
@@ -617,7 +694,7 @@ mod tests {
         assert_eq!(s.time_short_break_secs, 5 * 60, "short break must reset to 5 min");
         assert_eq!(s.long_break_interval, 4, "work rounds must reset to 4");
         // Non-timer settings are also wiped and reseeded to their defaults.
-        assert!(!s.always_on_top, "always_on_top must reset to default false");
+        assert!(s.always_on_top, "always_on_top must reset to default true");
     }
 
     #[test]
