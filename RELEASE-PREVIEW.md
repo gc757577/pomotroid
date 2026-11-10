@@ -1,12 +1,14 @@
-# Windows 로컬 배포 후보
+# Preview rc.2 배포 기록
 
-- 임시 제품명: **Pomotroid Fork Preview**
+- rc.2 배포 당시 제품명: **Pomotroid Fork Preview**
 - 버전: **0.1.0-rc.2**, Windows x64, NSIS, 현재 Windows 사용자 전용 설치
 - 식별자: `io.github.gc75.pomotroidfork.preview`
 - 설치 실행 파일: `pomotroid-fork-preview.exe`
 - 자동 업데이트: 비활성화. 원본 서버 주소·키·업데이트 플러그인·권한 제거. 명령을 직접 호출해도 거부.
 - 완전 종료: 트레이 숨기기를 선택하지 않은 X 버튼은 앱 전체 종료를 요청한다. 위젯의 숨겨진 소유 창이 프로세스를 남기던 경로를 보완했다.
 - 코드 서명: 없음. 공개 배포 및 자동 업데이트 채널은 아직 준비하지 않음.
+
+2026-11-10 정식 표시 이름을 **ClearPomo(클리어포모)**로 확정해 소스와 아이콘에 반영했다. 아래 rc.2 설치 파일은 재생성하지 않았으므로 기존 파일명·설치 안내를 유지한다. 새 이름과 Preview 업데이트 호환성은 [Windows 이름 변경 안내](src-tauri/windows/README.md)를 따른다.
 
 ## 데이터 분리
 

@@ -136,7 +136,7 @@
   });
 </script>
 
-<svelte:head><title>Pomotroid · {m.stats_title()}</title></svelte:head>
+<svelte:head><title>ClearPomo · {m.stats_title()}</title></svelte:head>
 <section class="widget">
   <header>
     <button class="drag" title={m.widget_move()} onpointerdown={e => begin(e)} onpointermove={move} onpointerup={e => end(e)} onpointercancel={e => end(e, true)} onkeydown={e => keyboard(e)}>

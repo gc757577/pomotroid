@@ -119,7 +119,7 @@ pub fn run() {
                         env!("APP_BUILD_SHA")
                     );
                     log::info!(
-                        "Pomotroid v{} — data dir: {}",
+                        "ClearPomo v{} — data dir: {}",
                         env!("CARGO_PKG_VERSION"),
                         app_data_dir.display()
                     );
@@ -242,7 +242,7 @@ pub fn run() {
                 .expect("main window not found");
 
             #[cfg(debug_assertions)]
-            main_window.set_title("Pomotroid Fork Dev")?;
+            main_window.set_title(app.config().product_name.as_deref().unwrap_or("ClearPomo Dev"))?;
 
             // The config sets decorations:true so macOS renders the window correctly
             // (decorations:false prevents event processing on macOS). On every other

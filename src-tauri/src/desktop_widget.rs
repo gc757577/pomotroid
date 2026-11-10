@@ -264,7 +264,7 @@ impl Widget {
         if self.owner.is_none() {
             self.owner = Some(
                 tauri::window::WindowBuilder::new(&self.app, OWNER)
-                    .title("Pomotroid widget owner")
+                    .title("ClearPomo widget owner")
                     .inner_size(760.0, 320.0)
                     .visible(false)
                     .skip_taskbar(true)
@@ -277,7 +277,7 @@ impl Widget {
         let surface = CreateWindowExW(
             WS_EX_TOOLWINDOW | WS_EX_LAYERED,
             wide("STATIC").as_ptr(),
-            wide("Pomotroid Statistics").as_ptr(),
+            wide("ClearPomo Statistics").as_ptr(),
             WS_POPUP | WS_CLIPCHILDREN,
             g.x,
             g.y,

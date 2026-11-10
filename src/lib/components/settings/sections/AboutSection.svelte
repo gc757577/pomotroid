@@ -9,7 +9,7 @@
   import type { UpdateInfo } from '$lib/types';
   import * as m from '$paraglide/messages.js';
 
-  let productName = $state('Pomotroid Fork Preview');
+  let productName = $state('ClearPomo');
   const REPO = 'https://github.com/Splode/pomotroid';
 
   let version = $state('...');
@@ -63,31 +63,15 @@
 
 <div class="section">
   <div class="hero">
-    <svg
-      version="1.2"
-      baseProfile="tiny"
-      width="64"
-      height="64"
-      viewBox="0 0 256 256"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-label="Pomotroid logo"
-    >
-      <circle fill="var(--color-background-light)" cx="128" cy="128" r="126.81" />
-      <circle
-        fill="none"
-        stroke="var(--color-focus-round)"
-        stroke-width="40"
-        stroke-linecap="round"
-        cx="128"
-        cy="128"
-        r="73.31"
-      />
-    </svg>
+    <img src="/app-icon.png" width="64" height="64" alt="ClearPomo" />
     <div>
       <h2 class="name">{productName}</h2>
       <p class="version">Version {version}</p>
     </div>
   </div>
+
+  <p class="brand-description">{m.about_clearpomo_description()}</p>
+  <p class="brand-attribution">Pomotroid · Copyright (c) 2018 Christopher Murphy · MIT License</p>
 
   <div class="links">
     <button class="link-row" onclick={() => openUrl(REPO)}>
@@ -148,6 +132,8 @@
 </div>
 
 <style>
+  .brand-description { margin: 0 20px 8px; font-size: 0.8rem; line-height: 1.5; }
+  .brand-attribution { margin: 0 20px 16px; font-size: 0.72rem; color: var(--color-foreground-darker); line-height: 1.5; }
   .section {
     display: flex;
     flex-direction: column;

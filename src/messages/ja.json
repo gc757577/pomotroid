@@ -79,7 +79,7 @@
   "system_group_updates": "アップデート",
   "system_toggle_check_updates": "自動的にアップデートを確認する",
   "system_toggle_check_updates_desc": "設定を開いたときに自動的に新しいバージョンを確認します。",
-  "shortcuts_accessibility_notice": "macOSでグローバルショートカットを使用するには、アクセシビリティのアクセス許可が必要です。システム設定 → プライバシーとセキュリティ → アクセシビリティでPomotroidを有効にしてください。",
+  "shortcuts_accessibility_notice": "macOSでグローバルショートカットを使用するには、アクセシビリティのアクセス許可が必要です。システム設定 → プライバシーとセキュリティ → アクセシビリティでClearPomoを有効にしてください。",
   "shortcuts_accessibility_open": "システム設定を開く",
   "shortcuts_note": "グローバルショートカットはウィンドウにフォーカスがない場合でも機能します。フィールドをクリックして、記録したいキーの組み合わせを押してください。",
   "shortcuts_toggle_timer": "タイマーの切り替え",
@@ -181,5 +181,6 @@
   "autostart_path_changed": "登録されたパスが現在のアプリと異なります。スイッチをオンにすると現在のインストール先に更新します。",
   "autostart_failed": "自動起動を変更できませんでした。登録状態を確認して再試行してください。",
   "autostart_status_failed": "自動起動の登録状態を確認できませんでした。",
-  "autostart_rollback_failed": "変更と登録の復元に失敗しました。Windowsの設定 → アプリ → スタートアップで確認してください。"
+  "autostart_rollback_failed": "変更と登録の復元に失敗しました。Windowsの設定 → アプリ → スタートアップで確認してください。",
+  "about_clearpomo_description": "ClearPomoはPomotroidをベースにした集中・休憩タイマーです。"
 }

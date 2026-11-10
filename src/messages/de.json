@@ -79,7 +79,7 @@
   "system_group_updates": "Updates",
   "system_toggle_check_updates": "Automatisch nach Updates suchen",
   "system_toggle_check_updates_desc": "Beim Öffnen der Einstellungen automatisch auf neue Versionen prüfen.",
-  "shortcuts_accessibility_notice": "Globale Tastenkürzel erfordern unter macOS Zugriff auf die Bedienungshilfen. Aktiviere Pomotroid unter Systemeinstellungen → Datenschutz & Sicherheit → Bedienungshilfen.",
+  "shortcuts_accessibility_notice": "Globale Tastenkürzel erfordern unter macOS Zugriff auf die Bedienungshilfen. Aktiviere ClearPomo unter Systemeinstellungen → Datenschutz & Sicherheit → Bedienungshilfen.",
   "shortcuts_accessibility_open": "Systemeinstellungen öffnen",
   "shortcuts_note": "Globale Tastenkürzel funktionieren auch, wenn das Fenster nicht fokussiert ist. Klicke auf ein Feld und drücke die gewünschte Tastenkombination, um sie aufzuzeichnen.",
   "shortcuts_toggle_timer": "Timer umschalten",
@@ -181,5 +181,6 @@
   "autostart_path_changed": "Der registrierte Programmpfad weicht ab. Aktivieren Sie den Schalter, um den aktuellen Installationspfad einzutragen.",
   "autostart_failed": "Autostart konnte nicht geändert werden. Prüfen Sie die Registrierung und versuchen Sie es erneut.",
   "autostart_status_failed": "Die Autostart-Registrierung konnte nicht gelesen werden.",
-  "autostart_rollback_failed": "Änderung und Wiederherstellung sind fehlgeschlagen. Prüfen Sie Windows-Einstellungen → Apps → Autostart."
+  "autostart_rollback_failed": "Änderung und Wiederherstellung sind fehlgeschlagen. Prüfen Sie Windows-Einstellungen → Apps → Autostart.",
+  "about_clearpomo_description": "ClearPomo ist ein Fokus- und Pausentimer auf Basis von Pomotroid."
 }

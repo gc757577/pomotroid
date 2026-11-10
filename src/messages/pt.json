@@ -79,7 +79,7 @@
   "system_group_updates": "Atualizações",
   "system_toggle_check_updates": "Verificar atualizações automaticamente",
   "system_toggle_check_updates_desc": "Verificar automaticamente novas versões ao abrir Configurações.",
-  "shortcuts_accessibility_notice": "Os atalhos globais requerem acesso de Acessibilidade no macOS. Ative o Pomotroid em Configurações do Sistema → Privacidade e Segurança → Acessibilidade.",
+  "shortcuts_accessibility_notice": "Os atalhos globais requerem acesso de Acessibilidade no macOS. Ative o ClearPomo em Configurações do Sistema → Privacidade e Segurança → Acessibilidade.",
   "shortcuts_accessibility_open": "Abrir Configurações do Sistema",
   "shortcuts_note": "Os atalhos globais funcionam mesmo quando a janela não está em foco. Clique em um campo e pressione a combinação de teclas desejada para gravá-la.",
   "shortcuts_toggle_timer": "Alternar Temporizador",
@@ -181,5 +181,6 @@
   "autostart_path_changed": "O caminho registrado é diferente. Ative o interruptor para usar o caminho de instalação atual.",
   "autostart_failed": "Não foi possível alterar a inicialização automática. Verifique o registro e tente novamente.",
   "autostart_status_failed": "Não foi possível consultar o registro de inicialização automática.",
-  "autostart_rollback_failed": "A alteração e a restauração falharam. Verifique Configurações do Windows → Aplicativos → Inicializar."
+  "autostart_rollback_failed": "A alteração e a restauração falharam. Verifique Configurações do Windows → Aplicativos → Inicializar.",
+  "about_clearpomo_description": "ClearPomo é um temporizador de foco e descanso baseado no Pomotroid."
 }

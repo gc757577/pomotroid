@@ -79,7 +79,7 @@
   "system_group_updates": "Mises à jour",
   "system_toggle_check_updates": "Vérifier les mises à jour automatiquement",
   "system_toggle_check_updates_desc": "Rechercher automatiquement les nouvelles versions à l'ouverture des Réglages.",
-  "shortcuts_accessibility_notice": "Les raccourcis globaux nécessitent l'accès à l'Accessibilité sur macOS. Activez Pomotroid dans Réglages Système → Confidentialité et sécurité → Accessibilité.",
+  "shortcuts_accessibility_notice": "Les raccourcis globaux nécessitent l'accès à l'Accessibilité sur macOS. Activez ClearPomo dans Réglages Système → Confidentialité et sécurité → Accessibilité.",
   "shortcuts_accessibility_open": "Ouvrir les Réglages Système",
   "shortcuts_note": "Les raccourcis globaux fonctionnent même lorsque la fenêtre n'est pas active. Cliquez sur un champ et appuyez sur la combinaison de touches souhaitée pour l'enregistrer.",
   "shortcuts_toggle_timer": "Basculer le minuteur",
@@ -181,5 +181,6 @@
   "autostart_path_changed": "Le chemin enregistré est différent. Activez le commutateur pour utiliser le chemin installé actuel.",
   "autostart_failed": "Impossible de modifier le démarrage automatique. Vérifiez l’enregistrement puis réessayez.",
   "autostart_status_failed": "Impossible de lire l’enregistrement du démarrage automatique.",
-  "autostart_rollback_failed": "La modification et la restauration ont échoué. Vérifiez Paramètres Windows → Applications → Démarrage."
+  "autostart_rollback_failed": "La modification et la restauration ont échoué. Vérifiez Paramètres Windows → Applications → Démarrage.",
+  "about_clearpomo_description": "ClearPomo est un minuteur de concentration et de pause basé sur Pomotroid."
 }

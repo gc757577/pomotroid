@@ -79,7 +79,7 @@
   "system_group_updates": "Updates",
   "system_toggle_check_updates": "Check for Updates Automatically",
   "system_toggle_check_updates_desc": "Automatically check for new versions when Settings is opened.",
-  "shortcuts_accessibility_notice": "Global shortcuts require Accessibility access on macOS. Enable Pomotroid in System Settings → Privacy & Security → Accessibility.",
+  "shortcuts_accessibility_notice": "Global shortcuts require Accessibility access on macOS. Enable ClearPomo in System Settings → Privacy & Security → Accessibility.",
   "shortcuts_accessibility_open": "Open System Settings",
   "shortcuts_note": "Global shortcuts work even when the window is not focused. Click a field and press your desired key combination to record it.",
   "shortcuts_toggle_timer": "Toggle Timer",
@@ -214,5 +214,6 @@
   "autostart_path_changed": "The registered executable differs from this app. Enable the switch to update it to the current installed path.",
   "autostart_failed": "Could not change autostart. Check the current registration and try again.",
   "autostart_status_failed": "Could not read the autostart registration.",
-  "autostart_rollback_failed": "Autostart change and registration rollback failed. Check Windows Settings → Apps → Startup."
+  "autostart_rollback_failed": "Autostart change and registration rollback failed. Check Windows Settings → Apps → Startup.",
+  "about_clearpomo_description": "ClearPomo is a focus and break timer based on Pomotroid."
 }

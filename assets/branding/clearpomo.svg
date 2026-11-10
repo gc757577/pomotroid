@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1000 1000">
+  <title>ClearPomo</title>
+  <desc>Cream rounded tile with a counterclockwise countdown ring and pale upper-left segment.</desc>
+  <defs>
+    <linearGradient id="cream" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0d8"/><stop offset="1" stop-color="#ffecd0"/></linearGradient>
+    <linearGradient id="apricot" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f87960"/><stop offset="1" stop-color="#f36753"/></linearGradient>
+  </defs>
+  <rect x="40" y="40" width="920" height="920" rx="180" fill="url(#cream)"/>
+  <path d="M 464.414,210.177 A 292,292 0 1,1 208.711,479.631" fill="none" stroke="url(#apricot)" stroke-width="88" stroke-linecap="round"/>
+  <path d="M 235.358,376.595 A 292,292 0 0,1 362.914,242.179" fill="none" stroke="#ffc6ae" stroke-width="88" stroke-linecap="round"/>
+</svg>

@@ -111,7 +111,7 @@ def main():
                package.get("license", "See included license"), repository, directory, license_files(directory))
 
     (OUT / "THIRD-PARTY-NOTICES.txt").write_text(
-        "Pomotroid Fork Preview — third-party notices\n"
+        "ClearPomo (클리어포모) — third-party notices\n"
         "Original Pomotroid: Copyright (c) 2018 Christopher Murphy. MIT.\n"
         "The unchanged project license is LICENSE.txt.\n"
         "Bundled Mona Sans fonts: see fonts/.\n"

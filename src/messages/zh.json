@@ -79,7 +79,7 @@
   "system_group_updates": "更新",
   "system_toggle_check_updates": "自动检查更新",
   "system_toggle_check_updates_desc": "打开设置时自动检查新版本。",
-  "shortcuts_accessibility_notice": "在 macOS 上使用全局快捷键需要辅助功能权限。请在系统设置 → 隐私与安全性 → 辅助功能中启用 Pomotroid。",
+  "shortcuts_accessibility_notice": "在 macOS 上使用全局快捷键需要辅助功能权限。请在系统设置 → 隐私与安全性 → 辅助功能中启用 ClearPomo。",
   "shortcuts_accessibility_open": "打开系统设置",
   "shortcuts_note": "全局快捷键即使窗口未聚焦也能使用。点击字段并按下所需的按键组合进行录制。",
   "shortcuts_toggle_timer": "切换计时器",
@@ -181,5 +181,6 @@
   "autostart_path_changed": "注册路径与当前应用不同。打开开关即可更新为当前安装路径。",
   "autostart_failed": "无法更改自动启动。请检查当前注册状态后重试。",
   "autostart_status_failed": "无法读取自动启动注册状态。",
-  "autostart_rollback_failed": "更改和注册恢复失败。请检查 Windows 设置 → 应用 → 启动。"
+  "autostart_rollback_failed": "更改和注册恢复失败。请检查 Windows 设置 → 应用 → 启动。",
+  "about_clearpomo_description": "ClearPomo 是基于 Pomotroid 的专注与休息计时器。"
 }

@@ -79,7 +79,7 @@
   "system_group_updates": "Güncellemeler",
   "system_toggle_check_updates": "Güncellemeleri Otomatik Kontrol Et",
   "system_toggle_check_updates_desc": "Ayarlar açıldığında otomatik yeni sürüm kontrolü yap.",
-  "shortcuts_accessibility_notice": "Genel kısayollar macOS'ta Erişilebilirlik iznini gerektirir. Sistem Ayarları → Gizlilik ve Güvenlik → Erişilebilirlik bölümünde Pomotroid'i etkinleştirin.",
+  "shortcuts_accessibility_notice": "Genel kısayollar macOS'ta Erişilebilirlik iznini gerektirir. Sistem Ayarları → Gizlilik ve Güvenlik → Erişilebilirlik bölümünde ClearPomo'i etkinleştirin.",
   "shortcuts_accessibility_open": "Sistem Ayarlarını Aç",
   "shortcuts_note": "Genel kısayollar, pencere odaklanmamış olsa bile çalışır. Bir alana tıklayın ve kaydetmek için istediğiniz tuş kombinasyonuna basın.",
   "shortcuts_toggle_timer": "Zamanlayıcıyı Aç/Kapat",
@@ -181,5 +181,6 @@
   "autostart_path_changed": "Kayıtlı yol bu uygulamadan farklı. Geçerli kurulum yolunu kullanmak için anahtarı açın.",
   "autostart_failed": "Otomatik başlatma değiştirilemedi. Kaydı kontrol edip yeniden deneyin.",
   "autostart_status_failed": "Otomatik başlatma kaydı okunamadı.",
-  "autostart_rollback_failed": "Değişiklik ve geri yükleme başarısız. Windows Ayarları → Uygulamalar → Başlangıç bölümünü kontrol edin."
+  "autostart_rollback_failed": "Değişiklik ve geri yükleme başarısız. Windows Ayarları → Uygulamalar → Başlangıç bölümünü kontrol edin.",
+  "about_clearpomo_description": "ClearPomo, Pomotroid tabanlı bir odaklanma ve mola zamanlayıcısıdır."
 }

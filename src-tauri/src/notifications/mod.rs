@@ -30,7 +30,7 @@ pub fn show(app: &AppHandle, title: &str, body: &str) {
 #[cfg(target_os = "linux")]
 pub fn dispatch(_app: &AppHandle, title: &str, body: &str) {
     let _ = std::process::Command::new("notify-send")
-        .args(["--app-name=Pomotroid", "--urgency=normal", "--expire-time=5000", title, body])
+        .args(["--app-name=ClearPomo", "--urgency=normal", "--expire-time=5000", title, body])
         .spawn();
 }
 

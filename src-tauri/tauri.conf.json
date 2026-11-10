@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Pomotroid Fork Preview",
+  "productName": "ClearPomo",
   "version": "0.1.0-rc.2",
   "identifier": "io.github.gc75.pomotroidfork.preview",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Pomotroid Fork Preview",
+        "title": "ClearPomo",
         "width": 360,
         "height": 478,
         "minWidth": 240,
@@ -46,8 +46,8 @@
     ],
     "category": "Utility",
     "copyright": "Copyright © 2017–2026 Christopher Murphy (Splode). MIT License.",
-    "shortDescription": "A beautiful Pomodoro timer",
-    "longDescription": "Pomotroid is a simple, configurable and visually pleasing Pomodoro timer. Keep track of your work sessions and take breaks with a clean, themeable interface.",
+    "shortDescription": "클리어포모 · Pomotroid 기반 집중 타이머",
+    "longDescription": "클리어포모(ClearPomo)는 Pomotroid를 기반으로 한 집중·휴식 타이머입니다. 기존 Pomotroid 저작권과 MIT 라이선스를 유지합니다.",
     "linux": {
       "deb": {
         "depends": []
@@ -90,8 +90,10 @@
           "Korean",
           "English"
         ],
-        "startMenuFolder": "Pomotroid Fork Preview",
-        "installerHooks": "windows/nsis-hooks.nsh"
+        "startMenuFolder": "ClearPomo",
+        "installerHooks": "windows/nsis-hooks.nsh",
+        "template": "windows/installer.nsi",
+        "uninstallerIcon": "icons/icon.ico"
       },
       "wix": {
         "language": "en-US"

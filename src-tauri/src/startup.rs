@@ -82,6 +82,8 @@ mod windows {
 
     pub const RUN: &str = r"Software\Microsoft\Windows\CurrentVersion\Run";
     pub const APPROVED: &str = r"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run";
+    // Stable installer identity: ClearPomo changes DisplayName only. The NSIS
+    // template retains this key and the existing executable/data identity.
     const UNINSTALL: &str = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\Pomotroid Fork Preview";
 
     pub fn command(exe: &Path) -> String { format!("\"{}\" {LOGIN_ARG}", exe.display()) }

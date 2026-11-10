@@ -11,3 +11,7 @@ License: nsis-tauri-utils-LICENSE.txt (MIT option).
 Source: https://github.com/tauri-apps/nsis-tauri-utils/tree/nsis_tauri_utils-v0.5.3
 License copied from:
 https://raw.githubusercontent.com/tauri-apps/nsis-tauri-utils/nsis_tauri_utils-v0.5.3/LICENSE_MIT
+
+Tauri CLI 2.11.2 NSIS template (MIT option)
+License: tauri-template-LICENSE.txt
+Source: https://github.com/tauri-apps/tauri/blob/tauri-cli-v2.11.2/crates/tauri-bundler/src/bundle/windows/nsis/installer.nsi

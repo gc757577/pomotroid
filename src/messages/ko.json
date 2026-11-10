@@ -79,7 +79,7 @@
   "system_group_updates": "업데이트",
   "system_toggle_check_updates": "업데이트 자동 확인",
   "system_toggle_check_updates_desc": "설정을 열 때 새 버전이 있는지 자동으로 확인합니다.",
-  "shortcuts_accessibility_notice": "macOS에서 전역 단축키를 사용하려면 손쉬운 사용 권한이 필요합니다. 시스템 설정 → 개인정보 보호 및 보안 → 손쉬운 사용에서 Pomotroid를 허용하세요.",
+  "shortcuts_accessibility_notice": "macOS에서 전역 단축키를 사용하려면 손쉬운 사용 권한이 필요합니다. 시스템 설정 → 개인정보 보호 및 보안 → 손쉬운 사용에서 ClearPomo를 허용하세요.",
   "shortcuts_accessibility_open": "시스템 설정 열기",
   "shortcuts_note": "전역 단축키는 앱 창이 선택되지 않은 상태에서도 작동합니다. 입력란을 클릭하고 원하는 키 조합을 누르세요.",
   "shortcuts_toggle_timer": "타이머 시작·일시정지",
@@ -214,5 +214,6 @@
   "autostart_path_changed": "등록된 실행 경로가 현재 앱과 다릅니다. 스위치를 켜면 현재 설치 경로로 갱신합니다.",
   "autostart_failed": "자동 실행 설정을 변경하지 못했습니다. 현재 등록 상태를 확인한 뒤 다시 시도해 주세요.",
   "autostart_status_failed": "자동 실행 등록 상태를 확인하지 못했습니다.",
-  "autostart_rollback_failed": "자동 실행 변경과 이전 등록 복구에 실패했습니다. Windows 설정 → 앱 → 시작 프로그램에서 상태를 확인해 주세요."
+  "autostart_rollback_failed": "자동 실행 변경과 이전 등록 복구에 실패했습니다. Windows 설정 → 앱 → 시작 프로그램에서 상태를 확인해 주세요.",
+  "about_clearpomo_description": "클리어포모는 Pomotroid를 기반으로 한 집중·휴식 타이머입니다."
 }

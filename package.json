@@ -1,7 +1,7 @@
 {
   "name": "pomotroid",
   "version": "0.1.0-rc.2",
-  "description": "A simple and visually-pleasing Pomodoro timer",
+  "description": "ClearPomo — a focus and break timer based on Pomotroid",
   "author": {
     "email": "flyweight@pm.me",
     "name": "Christopher Murphy",

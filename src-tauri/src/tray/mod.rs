@@ -1,12 +1,5 @@
-/// System tray management with dynamic arc icon via tiny-skia.
-///
-/// The tray icon is a 32×32 RGBA image:
-///   - Solid filled background circle in the theme's background color.
-///   - Progress arc from 12 o'clock sweeping clockwise, colored by round type.
-///   - While paused: two vertical bars drawn over the progress arc.
-///
-/// Colors come from the active theme, updated when theme changes.
-/// The tray is created/destroyed when `min_to_tray` setting changes.
+/// ClearPomo dynamic tray: cream rounded tile, pale upper-left segment,
+/// themed progress arc, and the existing pause indicator/countdown policy.
 ///
 /// ## Linux / Wayland note
 /// Tauri's tray support on Linux is backed by `libappindicator-sys`, which
@@ -15,7 +8,7 @@
 /// typically does not ship these libraries.  `create_tray` probes for them
 /// before calling `TrayIconBuilder::build()` and returns early with a warning
 /// when they are absent, preventing the abort.
-use std::f32::consts::{FRAC_PI_2, PI, TAU};
+use std::f32::consts::{FRAC_PI_2, PI};
 use std::sync::{Arc, Mutex};
 
 use tauri::{
@@ -47,7 +40,7 @@ impl Default for TrayColors {
         // Pomotroid theme defaults (matches pomotroid.json bundled theme).
         Self {
             background: [47, 56, 75, 255],    // #2F384B
-            focus_round: [226, 93, 96, 255],  // #E25D60
+            focus_round: [244, 109, 87, 255],  // ClearPomo apricot fallback
             short_round: [53, 188, 174, 255], // #35BCAE
             long_round: [89, 174, 209, 255],  // #59AED1
             foreground: [255, 255, 255, 255], // #FFFFFF
@@ -297,7 +290,7 @@ pub fn create_tray(app: &AppHandle, state: &Arc<TrayState>) {
 
     let tray = TrayIconBuilder::new()
         .icon(image)
-        .tooltip(app.config().product_name.as_deref().unwrap_or("Pomotroid"))
+        .tooltip(app.config().product_name.as_deref().unwrap_or("ClearPomo"))
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_tray_icon_event(|tray_icon, event| {
@@ -447,21 +440,17 @@ pub fn update_menu_items(state: &Arc<TrayState>, is_running: bool, is_paused: bo
 // density displays; the larger source means the circle stays clean either way.
 const SIZE: u32 = 64;
 const CENTER: f32 = SIZE as f32 / 2.0;
-const RADIUS: f32 = CENTER - 5.0; // 5 px margin keeps the stroke inside the canvas
-const STROKE_WIDTH: f32 = 6.0;
-// Track opacity: the "empty" part of the ring at this brightness on a dark panel.
-// 22% white on #1a1a1a ≈ #383838 — invisible. 65% ≈ #a6a6a6 — clearly visible.
-const TRACK_ALPHA: u8 = 165; // ≈ 65 %
+const RADIUS: f32 = 18.7; // Match the master SVG at 64px.
+const STROKE_WIDTH: f32 = 5.6;
+const MAIN_START: f32 = -FRAC_PI_2 - 7.0 * PI / 180.0;
+const MAIN_SWEEP: f32 = 281.0 * PI / 180.0;
 
 fn rgba_color(c: [u8; 4]) -> Color {
     Color::from_rgba8(c[0], c[1], c[2], c[3])
 }
 
-/// Render a 64×64 RGBA tray icon as a **ring** with a progress arc.
-///
-/// Using a ring (stroke-only circle) on a transparent background means the
-/// icon reads as a clear circle regardless of panel colour or scale factor,
-/// unlike a solid filled disc which looks like a dark blob at small sizes.
+/// Match the static ClearPomo silhouette while retaining progress, round
+/// colors and pause controls. Countdown retracts the arc counterclockwise.
 pub fn render_tray_icon_rgba(
     colors: &TrayColors,
     paused: bool,
@@ -479,17 +468,27 @@ pub fn render_tray_icon_rgba(
         ..Default::default()
     };
 
-    // Track ring: full circle at low opacity — defines the circular shape.
-    {
-        let [r, g, b, _] = colors.foreground;
-        paint.set_color(Color::from_rgba8(r, g, b, TRACK_ALPHA));
-    }
-    let ring = {
-        let mut pb = PathBuilder::new();
-        pb.push_circle(CENTER, CENTER, RADIUS);
-        pb.finish().expect("ring path")
-    };
-    pixmap.stroke_path(&ring, &paint, &stroke, Transform::identity(), None);
+    // Opaque cream rounded tile; the four outside corners stay transparent.
+    paint.set_color(Color::from_rgba8(255, 239, 214, 255));
+    let (lo, hi, radius, k) = (2.5, 61.5, 12.0, 0.552_284_8);
+    let mut tile = PathBuilder::new();
+    tile.move_to(lo + radius, lo); tile.line_to(hi - radius, lo);
+    tile.cubic_to(hi - radius + k * radius, lo, hi, lo + radius - k * radius, hi, lo + radius);
+    tile.line_to(hi, hi - radius);
+    tile.cubic_to(hi, hi - radius + k * radius, hi - radius + k * radius, hi, hi - radius, hi);
+    tile.line_to(lo + radius, hi);
+    tile.cubic_to(lo + radius - k * radius, hi, lo, hi - radius + k * radius, lo, hi - radius);
+    tile.line_to(lo, lo + radius);
+    tile.cubic_to(lo, lo + radius - k * radius, lo + radius - k * radius, lo, lo + radius, lo);
+    tile.close();
+    pixmap.fill_path(&tile.finish().expect("tile"), &paint, tiny_skia::FillRule::Winding, Transform::identity(), None);
+
+    paint.set_color(Color::from_rgba8(248, 188, 167, 85));
+    let track = build_arc_path(CENTER, CENTER, RADIUS, MAIN_START, MAIN_START + MAIN_SWEEP);
+    pixmap.stroke_path(&track, &paint, &stroke, Transform::identity(), None);
+    paint.set_color(Color::from_rgba8(255, 198, 174, 255));
+    let marker = build_arc_path(CENTER, CENTER, RADIUS, 205.0 * PI / 180.0, 242.0 * PI / 180.0);
+    pixmap.stroke_path(&marker, &paint, &stroke, Transform::identity(), None);
 
     // Round-type color: used for both the progress arc and the pause bars.
     let round_color = match round_type {
@@ -498,14 +497,14 @@ pub fn render_tray_icon_rgba(
         _             => rgba_color(colors.focus_round),
     };
 
-    // Progress arc from 12 o'clock, clockwise, in the round-type colour.
+    // Preserve the upper-left gaps at full progress; use the round-theme color.
     paint.set_color(round_color);
 
     // In elapsed mode the arc grows as time passes; in countdown mode it shrinks.
     let effective = if countdown { 1.0 - progress } else { progress };
-    let sweep = effective.clamp(0.0, 1.0) * TAU;
+    let sweep = effective.clamp(0.0, 1.0) * MAIN_SWEEP;
     if sweep > 0.001 {
-        let start = -FRAC_PI_2;
+        let start = MAIN_START;
         let end   = start + sweep;
         let path  = build_arc_path(CENTER, CENTER, RADIUS, start, end);
         pixmap.stroke_path(&path, &paint, &stroke, Transform::identity(), None);
@@ -530,7 +529,12 @@ pub fn render_tray_icon_rgba(
         }
     }
 
-    pixmap.take()
+    // tiny-skia stores premultiplied pixels; Tauri expects straight RGBA.
+    // Demultiplication avoids dark fringes around the cream tile.
+    pixmap.pixels().iter().flat_map(|pixel| {
+        let color = pixel.demultiply();
+        [color.red(), color.green(), color.blue(), color.alpha()]
+    }).collect()
 }
 
 /// Approximate a circular arc with cubic Bézier segments (max π/2 per segment).
@@ -571,6 +575,38 @@ fn arc_segment(pb: &mut PathBuilder, cx: f32, cy: f32, r: f32, a0: f32, a1: f32,
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn clearpomo_tray_has_transparent_corners_and_opaque_cream_tile() {
+        let bytes = render_tray_icon_rgba(&TrayColors::default(), false, 0.5, "work", true);
+        let pixel = |x: usize, y: usize| &bytes[(y * SIZE as usize + x) * 4..(y * SIZE as usize + x) * 4 + 4];
+        assert_eq!(pixel(0, 0)[3], 0);
+        assert_eq!(pixel(63, 63)[3], 0);
+        assert_eq!(pixel(32, 32), &[255, 239, 214, 255]);
+        assert_eq!(pixel(32, 3)[3], 255);
+    }
+
+    #[test]
+    fn clearpomo_tray_preserves_countdown_and_round_color_policies() {
+        let colors = TrayColors::default();
+        assert_eq!(render_tray_icon_rgba(&colors, false, 0.25, "work", true),
+            render_tray_icon_rgba(&colors, false, 0.75, "work", false));
+        let full = render_tray_icon_rgba(&colors, false, 0.0, "work", true);
+        let half = render_tray_icon_rgba(&colors, false, 0.5, "work", true);
+        let empty = render_tray_icon_rgba(&colors, false, 1.0, "work", true);
+        assert_ne!(full, half); assert_ne!(half, empty);
+        assert_ne!(half, render_tray_icon_rgba(&colors, false, 0.5, "short-break", true));
+        assert_ne!(half, render_tray_icon_rgba(&colors, false, 0.5, "long-break", true));
+    }
+
+    #[test]
+    fn generated_app_icon_is_rgba_with_transparent_outside_corners() {
+        let icon = tiny_skia::Pixmap::decode_png(include_bytes!("../../icons/32x32.png")).unwrap();
+        assert_eq!((icon.width(), icon.height()), (32, 32));
+        assert_eq!(icon.pixel(0, 0).unwrap().alpha(), 0);
+        assert_eq!(icon.pixel(31, 31).unwrap().alpha(), 0);
+        assert_eq!(icon.pixel(16, 16).unwrap().alpha(), 255);
+    }
 
     #[test]
     fn render_returns_correct_byte_count() {
