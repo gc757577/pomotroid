@@ -24,7 +24,7 @@
 
 ### 설치
 
-<!-- 공개 다운로드 주소가 확정되면 여기에 Windows x64 설치 파일 링크를 추가합니다. -->
+[Windows x64 다운로드](https://github.com/gc757577/pomotroid/releases/tag/v0.1.0-rc.4)
 
 1. Windows x64용 설치 파일(`ClearPomo_*_x64-setup.exe`)을 실행하고 설치 화면의 안내를 따릅니다.
 2. 설치가 끝나면 시작 메뉴에서 **ClearPomo**를 엽니다.
