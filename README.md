@@ -1,144 +1,43 @@
-<div align="center">
-  <img alt="Pomotroid" src=".github/images/pomotroid-title.png" width="800px">
-</div>
-<div align="center">
-  <img alt="Pomotroid in action" src=".github/images/pomotroid-screens.png" width="800px">
-</div>
+# ClearPomo (클리어포모)
 
-<p align="center">Simple and visually-pleasing Pomodoro timer.</p>
+집중과 휴식을 번갈아 진행하고, 집중 기록을 바탕화면에서 확인할 수 있는 Windows용 뽀모도로 타이머입니다.
 
----
+![왼쪽 위에 통계 위젯, 오른쪽 아래에 실행 중인 원형 타이머가 있으며 두 창 뒤로 배경이 비치는 Windows 바탕화면](.github/images/clearpomo-desktop.png)
 
-- [Overview](#overview)
-- [Features](#features)
-- [Statistics](#statistics)
-- [Themes](#themes)
-- [Install](#install)
-- [WebSocket API](#websocket-api)
-- [Development](#development)
-- [License](#license)
+*Windows 바탕화면에 띄운 반투명 타이머와 통계 위젯*
 
-## Overview
+## 주요 기능
 
-Pomotroid is a simple and configurable Pomodoro timer. It aims to provide a visually-pleasing and reliable way to track productivity using the Pomodoro Technique.
+- **불투명도 조절** — 타이머와 통계 위젯의 불투명도를 각각 20~100%로 조절할 수 있습니다.
+- **마우스를 올리면 부드럽게 전환** — 타이머에 포인터를 올리면 따로 지정한 불투명도로 부드럽게 바뀝니다. 포인터가 창을 벗어나면 평상시 값으로 돌아옵니다.
+- **가로 미니 모드** — 원형 타이머를 작은 가로 진행 바로 바꿔 화면 공간을 아낄 수 있습니다. 모드를 바꿔도 진행 중인 라운드는 이어집니다.
+- **바탕화면 통계 위젯** — 오늘 완료한 집중 라운드 수와 집중 시간을 보여 주고, 연간 집중 기록을 잔디로 표시합니다. 위젯은 바탕화면에서 옮기거나 크기를 조절할 수 있습니다.
 
-Built with [Tauri 2](https://tauri.app), [Rust](https://www.rust-lang.org), and [Svelte 5](https://svelte.dev).
+### 타이머 화면
 
-## Features
+| 밝은 테마 | 어두운 테마 |
+| :---: | :---: |
+| <img src=".github/images/clearpomo-light-timer.png" width="226" alt="밝은 테마의 원형 타이머"> | <img src=".github/images/clearpomo-dark-timer.png" width="226" alt="어두운 테마의 원형 타이머"> |
+| <img src=".github/images/clearpomo-light-mini.png" width="202" alt="밝은 테마의 가로 미니 모드 타이머"> | <img src=".github/images/clearpomo-dark-mini.png" width="202" alt="어두운 테마의 가로 미니 모드 타이머"> |
 
-- **Configurable timer** — customise work duration, break durations, and the number of rounds per long break
-- **Statistics** — daily, weekly, and all-time session history with charts and a 52-week heatmap
-- **38 bundled themes** — including Dracula, Nord, Tokyo Night, Catppuccin, Gruvbox, Rose Piné, and more; auto-switches with your OS light/dark preference
-- **Custom themes** — drop a JSON file into the themes folder; applied instantly without a restart
-- **Localization** — 8 languages: English, Spanish, French, German, Japanese, Chinese (Simplified), Turkish, and Portuguese; auto-detects OS language
-- **Global shortcuts** — control the timer from anywhere, even when the window is hidden
-- **Custom audio** — replace the built-in alert sounds with your own files
-- **Tick sounds** — optional ticking during work and break rounds, independently toggleable
-- **Dynamic tray icon** — progress arc updates in real time; reflects round type and pause state
-- **Minimise / close to tray** — keep Pomotroid running in the background
-- **Desktop notifications** — native OS alerts on round transitions
-- **Compact mode** — a minimal set of controls appears when the window is resized small
-- **Always on top** — optionally keep the timer above other windows
-- **WebSocket server** — opt-in local server for stream overlays and external integrations
-- **Diagnostic logging** — rotating log file with a one-click shortcut to the log folder
+## Windows 설치 및 기본 사용법
 
-## Statistics
+### 설치
 
-Pomotroid tracks every completed session and surfaces the data across three views: a daily summary with an hourly breakdown, a weekly bar chart with streak tracking, and an all-time 52-week heatmap.
+<!-- 공개 다운로드 주소가 확정되면 여기에 Windows x64 설치 파일 링크를 추가합니다. -->
 
-<div align="center">
-  <img alt="Pomotroid statistics window" src=".github/images/pomotroid-stats.png" width="800px">
-</div>
+1. Windows x64용 설치 파일(`ClearPomo_*_x64-setup.exe`)을 실행하고 설치 화면의 안내를 따릅니다.
+2. 설치가 끝나면 시작 메뉴에서 **ClearPomo**를 엽니다.
 
-## Themes
+기존 Preview의 기록을 백업하고 덮어쓰는 방법은 [Windows 업데이트 절차](./RELEASE-CLEARPOMO.md)에 있습니다. 소스에서 실행하려면 [Windows 개발 실행 안내](./DEVELOPMENT-WINDOWS.md)를 참고하세요.
 
-Pomotroid ships with 38 themes and supports fully custom themes with live hot-reload.
+### 기본 사용법
 
-![Screenshots of Pomotroid using various themes](.github/images/pomotroid-themes-preview.png)
+1. 타이머의 **▶** 버튼을 눌러 집중 라운드를 시작합니다. 같은 버튼으로 일시정지하거나 재개할 수 있습니다. 집중 시간, 휴식 시간, 긴 휴식까지의 라운드 수는 **설정 → 타이머**에서 바꿀 수 있습니다.
+2. 상단의 ▼를 누르면 가로 미니 모드로 바뀌고, ▲를 누르면 원형 타이머로 돌아갑니다.
+3. **설정 → 화면 → 바탕화면 통계 위젯**을 켭니다. 같은 화면에서 타이머의 평상시·마우스를 올렸을 때의 불투명도와 위젯 불투명도를 조절할 수 있습니다.
+4. 앱을 완전히 종료하려면 Windows 작업 표시줄의 알림 영역에서 **ClearPomo** 아이콘을 오른쪽 클릭하고 **종료**를 선택합니다. 아이콘이 숨겨져 있으면 ∧를 눌러 찾을 수 있습니다.
 
-See [THEMES.md](./THEMES.md) for the full theme list and instructions on creating your own.
+## 출처와 라이선스
 
-## Install
-
-### Download
-
-Download the latest release from the [releases](https://github.com/Splode/pomotroid/releases) page.
-
-Available for **Windows** (installer + standalone exe), **macOS** (universal DMG), and **Linux** (`.deb` + AppImage).
-
-> **Note:** Pomotroid is currently unsigned. Depending on your OS security settings you may see a warning on first launch — this is expected and can be safely dismissed.
-
-### Linux notes
-
-**System tray on GNOME:** GNOME does not display tray icons by default. To use the tray icon feature (Settings → System → Show in System Tray), install the [AppIndicator and KStatusNotifierItem Support](https://extensions.gnome.org/extension/615/appindicator-support/) extension, then log out and back in. On Fedora: `sudo dnf install gnome-shell-extension-appindicator`. On Debian/Ubuntu it is pre-installed. Other desktop environments (KDE Plasma, XFCE, Cinnamon, MATE) support tray icons natively with no extra steps.
-
-### Homebrew (macOS)
-
-```sh
-brew install --cask pomotroid
-```
-
-> The Homebrew cask is maintained separately and may lag behind the latest release. Check the [releases](https://github.com/Splode/pomotroid/releases) page for the most current version.
-
-## Custom Themes
-
-Pomotroid supports user-created themes with automatic hot-reload — no restart required. See [THEMES.md](./THEMES.md) for directory paths, the full color reference, and a step-by-step guide.
-
-## WebSocket API
-
-Pomotroid exposes an optional WebSocket server (disabled by default) for integration with external tools, stream overlays, and automation scripts.
-
-**Enable it** in Settings → Advanced → WebSocket Server, then connect to `ws://127.0.0.1:<port>` (default port: 1314).
-
-### Messages
-
-**Client → Server**
-
-| Message                  | Description                     |
-| ------------------------ | ------------------------------- |
-| `{ "type": "getState" }` | Request the current timer state |
-
-**Server → Client**
-
-| Event         | Payload             | Description                                      |
-| ------------- | ------------------- | ------------------------------------------------ |
-| `state`       | `TimerState` object | Response to `getState`                           |
-| `roundChange` | `TimerState` object | Fired whenever the timer advances to a new round |
-| `error`       | `{ message }`       | Protocol error                                   |
-
-`TimerState` fields: `elapsed_secs`, `total_secs`, `is_running`, `is_paused`, `round_type`, `work_round_number`, `work_rounds_total`.
-
-## Development
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for full setup instructions, project structure, and the release process.
-
-### Quick start
-
-```bash
-# Install dependencies
-npm install
-
-# Run in development mode (hot-reload)
-npm run tauri dev
-
-# Build a production release
-npm run tauri build
-```
-
-### Localization
-
-UI strings live in `src/messages/<locale>.json` (en, es, fr, de, ja, zh, pt, tr). The compiled output in `src/paraglide/` is generated at build time and is not committed to the repository.
-
-**During development**, the Paraglide Vite plugin compiles messages automatically whenever `npm run tauri dev` or `npm run tauri build` is run — no manual step required.
-
-**After adding or changing message keys**, regenerate the output explicitly so that `svelte-check` and your editor can pick up the new types:
-
-```bash
-npm run paraglide:compile
-```
-
-This is also run automatically as part of `npm run check`.
-
-## License
-
-MIT &copy; [Christopher Murphy](https://github.com/Splode)
+ClearPomo는 Christopher Murphy의 뽀모도로 타이머 [Pomotroid](https://github.com/Splode/pomotroid)를 기반으로 합니다. 원본 저작권은 © 2018 Christopher Murphy이며, 소스 코드는 [MIT 라이선스](./LICENSE)로 배포됩니다.
