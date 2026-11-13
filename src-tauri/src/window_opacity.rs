@@ -322,6 +322,14 @@ pub fn preview(window: &tauri::WebviewWindow, percent: Option<u32>) -> Result<()
 
 #[cfg(target_os = "windows")]
 pub(crate) unsafe fn apply_native(hwnd: windows_sys::Win32::Foundation::HWND, percent: u32) -> Result<(), String> {
+    apply_native_alpha(hwnd, validate(percent)?)
+}
+
+#[cfg(target_os = "windows")]
+pub(crate) unsafe fn apply_native_alpha(
+    hwnd: windows_sys::Win32::Foundation::HWND,
+    alpha: u8,
+) -> Result<(), String> {
     use windows_sys::Win32::{
         Foundation::{GetLastError, SetLastError},
         UI::WindowsAndMessaging::{
@@ -330,7 +338,6 @@ pub(crate) unsafe fn apply_native(hwnd: windows_sys::Win32::Foundation::HWND, pe
         },
     };
 
-    let alpha = validate(percent)?;
     // SAFETY: The caller owns this live HWND. Preserve every existing extended
     // style bit; no click-through or topmost flags are changed.
     unsafe {
@@ -363,7 +370,7 @@ pub(crate) unsafe fn apply_native(hwnd: windows_sys::Win32::Foundation::HWND, pe
             {
                 return Err("창 불투명도 적용 결과를 확인할 수 없습니다.".into());
             }
-            log::debug!("[window-opacity] hwnd={hwnd:p} percent={percent} alpha={observed}");
+            log::debug!("[window-opacity] hwnd={hwnd:p} alpha={observed}");
         }
     }
     Ok(())

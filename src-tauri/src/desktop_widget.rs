@@ -66,6 +66,19 @@ unsafe fn set_style(hwnd: HWND, index: i32, value: isize) -> Result<(), String> 
 unsafe fn host() -> HWND {
     FindWindowW(wide("Progman").as_ptr(), null())
 }
+
+unsafe fn read_alpha(surface: HWND) -> Result<u8, String> {
+    let mut alpha = 0;
+    let mut flags = 0;
+    if GetLayeredWindowAttributes(surface, null_mut(), &mut alpha, &mut flags) == 0 {
+        return Err(format!("위젯 불투명도 읽기 실패: {}", GetLastError()));
+    }
+    if flags & LWA_ALPHA == 0 {
+        return Err("위젯 창에 알파 불투명도가 설정되지 않았습니다.".into());
+    }
+    Ok(alpha)
+}
+
 pub fn normalize(mut g: Geometry, bounds: RECT) -> Geometry {
     let max_w = (bounds.right - bounds.left).max(1) as u32;
     let max_h = (bounds.bottom - bounds.top).max(1) as u32;
@@ -199,6 +212,7 @@ impl Widget {
             return Ok(());
         }
         let surface = self.surface as HWND;
+        ShowWindow(surface, SW_HIDE);
         let desktop = host();
         let result = (|| -> Result<(), String> {
             if desktop.is_null()
@@ -246,9 +260,28 @@ impl Widget {
                 "바탕화면에 위젯을 연결하지 못했습니다. 일반 창으로 복구했습니다.",
             );
         }
-        crate::window_opacity::apply_native(surface, self.opacity_percent)?;
+        let expected = crate::window_opacity::validate(self.opacity_percent)?;
+        // Keep the surface transparent while Windows shows it and WebView2
+        // updates its bounds. Publish the visible alpha after both operations.
+        crate::window_opacity::apply_native_alpha(surface, 0)?;
+        let before_show = read_alpha(surface);
         ShowWindow(surface, SW_SHOWNOACTIVATE);
+        let after_show = read_alpha(surface);
         self.resize_view();
+        let after_resize = read_alpha(surface);
+        let applied = crate::window_opacity::apply_native(surface, self.opacity_percent)
+            .and_then(|()| read_alpha(surface));
+        log::info!(
+            "[widget-opacity] generation={} hwnd={surface:p} target={}% expected_alpha={expected} before_show={before_show:?} after_show={after_show:?} after_resize={after_resize:?} final={applied:?}",
+            self.generation,
+            self.opacity_percent,
+        );
+        if applied.as_ref().ok() != Some(&expected) {
+            ShowWindow(surface, SW_HIDE);
+            return Err(applied
+                .err()
+                .unwrap_or_else(|| "위젯 불투명도 적용 값이 예상과 다릅니다.".into()));
+        }
         self.counts(if self.attached {
             "attached"
         } else {
@@ -351,7 +384,9 @@ impl Widget {
                                 }
                                 w.view = Some(view2);
                                 w.bound = true;
-                                w.show_ready()?;
+                                w.show_ready().inspect_err(|error| {
+                                    log::error!("[widget] first presentation generation={generation}: {error}");
+                                })?;
                                 Ok(())
                             });
                         });
@@ -377,13 +412,15 @@ impl Widget {
             if let Err(error) = self.create() {
                 log::error!("[widget] recovery: {error}");
             }
-        } else if self.ready
-            && self.bound
-            && self.attached
-            && GetParent(self.surface as HWND) != host()
-        {
-            if let Err(error) = self.show_ready() {
-                log::error!("[widget] reattach: {error}");
+        } else if self.ready && self.bound {
+            let surface = self.surface as HWND;
+            // Check our WS_VISIBLE bit rather than an ancestor's visibility
+            // so hiding the desktop does not trigger another presentation.
+            let hidden = GetWindowLongPtrW(surface, GWL_STYLE) & WS_VISIBLE as isize == 0;
+            if hidden || (self.attached && GetParent(surface) != host()) {
+                if let Err(error) = self.show_ready() {
+                    log::error!("[widget] presentation retry generation={}: {error}", self.generation);
+                }
             }
         }
     }
@@ -523,7 +560,9 @@ pub fn action(
         match action {
             "ready" => {
                 w.ready = true;
-                w.show_ready()?;
+                w.show_ready().inspect_err(|error| {
+                    log::error!("[widget] ready generation={generation}: {error}");
+                })?;
             }
             "geometry" => {
                 if let Some(g) = geometry {
